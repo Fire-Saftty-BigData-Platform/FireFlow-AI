@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIREFLOW.AI</title>
+    <style>
+        /* 기본 설정 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+        
+        :root {
+            --primary-text: #000000;
+            --secondary-text: #666666;
+            --border-color: #e5e5e5;
+            --link-color: #5b21b6; /* 보라색 계열 */
+            --bg-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        a {
+            color: var(--link-color);
+            text-decoration: underline;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-underline-offset: 4px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* 헤더 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+        }
+
+        nav {
+            display: flex;
+            gap: 30px;
+        }
+
+        nav a {
+            text-transform: uppercase;
+        }
+
+        /* 히어로 섹션 */
+        .hero {
+            padding: 100px 0;
+            position: relative;
+        }
+
+        .hero-label {
+            font-size: 0.75rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .hero-title {
+            font-size: 10rem;
+            font-weight: 900;
+            line-height: 0.85;
+            letter-spacing: -0.05em;
+            margin-bottom: 60px;
+        }
+
+        .hero-content {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 60px;
+        }
+
+        .hero-desc {
+            max-width: 600px;
+            font-size: 1.8rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+        }
+
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 40px 0;
+        }
+
+        .btn {
+            padding: 20px 40px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--primary-text);
+        }
+
+        .btn-black {
+            background-color: var(--primary-text);
+            color: var(--bg-color);
+        }
+
+        .btn-white {
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+        }
+
+        /* 통계 섹션 */
+        .stats-section {
+            border-top: 1px solid var(--border-color);
+            padding: 100px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+        }
+
+        .stats-left .label {
+            font-size: 0.75rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .stats-left p {
+            font-size: 1.2rem;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stat-number {
+            font-size: 5rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            line-height: 1;
+        }
+
+        .stat-desc {
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: right;
+            max-width: 150px;
+        }
+
+        /* 그리드 분배기 */
+        .grid-divider {
+            height: 300px;
+            background-size: 50px 50px;
+            background-image: 
+                linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+                linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .grid-divider::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 1px;
+            background-color: #ffcccc;
+        }
+
+        .grid-content {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .grid-subtitle {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .grid-title {
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        /* 기능(Features) 섹션 */
+        .features-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .feature-col {
+            padding: 100px 40px;
+        }
+
+        .feature-col:first-child {
+            border-right: 1px solid var(--border-color);
+        }
+
+        .mode-badge {
+            display: inline-block;
+            background-color: #f5f5f5;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .feature-cat {
+            font-size: 0.75rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 4rem;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.04em;
+            margin-bottom: 60px;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-item {
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 20px;
+        }
+
+        .feature-num {
+            font-size: 0.8rem;
+            color: #999;
+            width: 30px;
+        }
+
+        .feature-text h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .feature-text p {
+            font-size: 0.95rem;
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+
+        /* 로드맵 섹션 */
+        .roadmap-section {
+            padding: 100px 40px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .roadmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+        }
+
+        .roadmap-table th {
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--primary-text);
+        }
+
+        .roadmap-table td {
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+
+        .roadmap-table td:nth-child(2) {
+            font-weight: 700;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-deployed .status-dot { background-color: #ff3300; }
+        .status-dev .status-dot, .status-planning .status-dot, .status-rnd .status-dot { background-color: #e0e0e0; }
+        
+        .status-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* 푸터 */
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 60px 40px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 5px;
+        }
+
+        .footer-copy {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 15px;
+            justify-content: flex-end;
+        }
+
+        .footer-version {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">FIREFLOW.AI (v1.0.4)</div>
+        <nav>
+            <a href="#">CITIZEN PORTAL</a>
+            <a href="#">COMMAND CENTER</a>
+            <a href="#">NETWORK STATUS</a>
+            <a href="#">CONTACT</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <section class="hero">
+            <span class="hero-label">GENERAL / INTELLIGENCE</span>
+            <h1 class="hero-title">FireFlow<br>System</h1>
+            
+            <div class="hero-content">
+                <p class="hero-desc">
+                    A critical infrastructure AI service designed to synchronize civilian evacuation and professional fire response in real-time. Where chaos exists, we provide the grid.
+                </p>
+            </div>
+
+            <div class="hero-actions">
+                <button class="btn btn-black">INITIALIZE CITIZEN MODE ↗</button>
+                <button class="btn btn-white">COMMAND LOGIN ↗</button>
+            </div>
+        </section>
+
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stats-left">
+                    <span class="label">THE PROBLEM / LATENCY</span>
+                    <p>In structural fires, the first 180 seconds determine survival. Information asymmetry between victims and responders is the primary cause of casualty.</p>
+                </div>
+                <div class="stats-right">
+                    <div class="stat-item">
+                        <div class="stat-number">340s</div>
+                        <div class="stat-desc">Avg. Firefighter Arrival Latency</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">68%</div>
+                        <div class="stat-desc">Evacuation Path Obstruction Rate</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">04ms</div>
+                        <div class="stat-desc">FireFlow Intelligence Latency</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="grid-divider">
+        <div class="grid-content">
+            <div class="grid-subtitle">REAL-TIME SPATIAL MAPPING ENGINE // ACTIVE</div>
+            <div class="grid-title">SYSTEM STABILITY: 99.98%</div>
+        </div>
+    </section>
+
+    <section class="features-section">
+        <div class="feature-col">
+            <span class="mode-badge">MODE 01</span>
+            <span class="feature-cat">CITIZEN EVACUATION ASSISTANCE</span>
+            <h2 class="feature-title">Survive the<br>Immediate.</h2>
+            
+            <ul class="feature-list">
+                <li class="feature-item">
+                    <div class="feature-num">01.</div>
+                    <div class="feature-text">
+                        <h4>Spatial Guidance</h4>
+                        <p>Input floor, smoke density, and obstacles. AI calculates the highest probability survival route based on building blueprints.</p>
+                    </div>
+                </li>
+                <li class="feature-item">
+                    <div class="feature-num">02.</div>
+                    <div class="feature-text">
+                        <h4>Companion Tracking</h4>
+                        <p>Log dependents and pets. The system prioritizes multi-person exit strategies and alerts rescuers to specific locations.</p>
+                    </div>
+                </li>
+                <li class="feature-item">
+                    <div class="feature-num">03.</div>
+                    <div class="feature-text">
+                        <h4>Dynamic Updates</h4>
+                        <p>Real-time rerouting as fire spreads. If a stairwell is breached, your route updates in &lt;100ms.</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="feature-col">
+            <span class="mode-badge">MODE 02</span>
+            <span class="feature-cat">COMMAND RESPONSE INTELLIGENCE</span>
+            <h2 class="feature-title">Command the<br>Incident.</h2>
+            
+            <ul class="feature-list">
+                <li class="feature-item">
+                    <div class="feature-num">01.</div>
+                    <div class="feature-text">
+                        <h4>Incident Triaging</h4>
+                        <p>Aggregated civilian reports converted into a heat-map of scene priorities and risk levels before you even arrive.</p>
+                    </div>
+                </li>
+                <li class="feature-item">
+                    <div class="feature-num">02.</div>
+                    <div class="feature-text">
+                        <h4>Structural Analysis</h4>
+                        <p>AI predicts smoke spread patterns and structural failure risks based on building materials and current intensity.</p>
+                    </div>
+                </li>
+                <li class="feature-item">
+                    <div class="feature-num">03.</div>
+                    <div class="feature-text">
+                        <h4>Resource Optimization</h4>
+                        <p>Data-driven suggestions for entry points and hydrant allocation to maximize containment speed.</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="roadmap-section">
+        <span class="feature-cat" style="margin-left: 0;">DEVELOPMENT / ROADMAP (2024-25)</span>
+        
+        <table class="roadmap-table">
+            <thead>
+                <tr>
+                    <th>PHASE</th>
+                    <th>MODULE NAME</th>
+                    <th>SCOPE / SPECIFICATION</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Q3 2024</td>
+                    <td>Core Engine MVP</td>
+                    <td>Spatial mapping, route calculation, basic input forms.</td>
+                    <td class="status-deployed"><span class="status-dot"></span><span class="status-text">DEPLOYED</span></td>
+                </tr>
+                <tr>
+                    <td>Q4 2024</td>
+                    <td>Fire-Link API</td>
+                    <td>Direct integration with city-wide emergency dispatch (911/112).</td>
+                    <td class="status-dev"><span class="status-dot"></span><span class="status-text">IN DEV</span></td>
+                </tr>
+                <tr>
+                    <td>Q1 2025</td>
+                    <td>Sensor Fusion</td>
+                    <td>IoT smoke detector and smart thermostat data integration.</td>
+                    <td class="status-planning"><span class="status-dot"></span><span class="status-text">PLANNING</span></td>
+                </tr>
+                <tr>
+                    <td>Q2 2025</td>
+                    <td>Predictive 2.0</td>
+                    <td>Neural network training on historical structural failure data.</td>
+                    <td class="status-rnd"><span class="status-dot"></span><span class="status-text">R&D</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <footer>
+        <div class="footer-left">
+            <div class="footer-logo">FIREFLOW</div>
+            <div class="footer-copy">©2024 FIREFLOW AI SYSTEMS. ALL RIGHTS RESERVED.</div>
+        </div>
+        <div class="footer-right">
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <a href="#">System Integrity</a>
+                <a href="#">LinkedIn</a>
+            </div>
+            <div class="footer-version">V1.0.4 - BUILT FOR CRITICAL INFRASTRUCTURE</div>
+        </div>
+    </footer>
+
+</body>
+</html>
