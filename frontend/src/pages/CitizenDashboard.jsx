@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import Layout from '../components/Layout.jsx';
 import ResultCard from '../components/ResultCard.jsx';
-import { createCitizenIncidentReport, getEvacuationGuideForIncident } from '../services/api.js';
+import { createCitizenIncidentReport } from '../services/api.js';
 
 const initialForm = {
-  location: '부산광역시 해운대구 A빌딩',
-  current_floor: '5층',
-  has_smoke: true,
+  location: '',
+  current_floor: '',
+  has_smoke: false,
   has_flame: false,
-  stairs_available: true,
+  stairs_available: false,
   is_trapped: false,
   has_vulnerable_people: false,
   report_note: '',
@@ -38,18 +38,6 @@ export default function CitizenDashboard({ onBack }) {
     }
   };
 
-  const loadDemoIncident = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      setResult(await getEvacuationGuideForIncident(1));
-    } catch (apiError) {
-      setError('대표 신고 대피 안내를 불러오지 못했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <Layout
       mode="CITIZEN EVACUATION"
@@ -61,15 +49,30 @@ export default function CitizenDashboard({ onBack }) {
         <form className="panel form-panel" onSubmit={submit}>
           <label>
             현재 위치 또는 주소
-            <input value={form.location} onChange={(event) => updateField('location', event.target.value)} />
+            <input
+              autoComplete="off"
+              placeholder="예: 시연용 A건물"
+              value={form.location}
+              onChange={(event) => updateField('location', event.target.value)}
+            />
           </label>
           <label>
             현재 층
-            <input value={form.current_floor} onChange={(event) => updateField('current_floor', event.target.value)} />
+            <input
+              autoComplete="off"
+              placeholder="예: 5층"
+              value={form.current_floor}
+              onChange={(event) => updateField('current_floor', event.target.value)}
+            />
           </label>
           <label>
             추가 상황 메모
-            <textarea rows="4" value={form.report_note} onChange={(event) => updateField('report_note', event.target.value)} />
+            <textarea
+              rows="4"
+              placeholder="예: 복도 쪽에 연기가 보입니다."
+              value={form.report_note}
+              onChange={(event) => updateField('report_note', event.target.value)}
+            />
           </label>
 
           <div className="toggle-grid">
@@ -82,9 +85,6 @@ export default function CitizenDashboard({ onBack }) {
 
           <button className="primary-button large-button" type="submit" disabled={loading}>
             {loading ? '등록 중' : '시연용 신고 등록'}
-          </button>
-          <button className="secondary-button" type="button" onClick={loadDemoIncident} disabled={loading}>
-            대표 신고로 보기
           </button>
           {error && <p className="error-text">{error}</p>}
         </form>

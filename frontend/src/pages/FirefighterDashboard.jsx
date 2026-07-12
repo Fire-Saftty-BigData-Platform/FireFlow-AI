@@ -6,11 +6,11 @@ import ResultCard from '../components/ResultCard.jsx';
 import { createFirefighterSummary, getFirefighterBriefingForIncident, getIncidents } from '../services/api.js';
 
 const initialForm = {
-  address: '부산광역시 해운대구 A빌딩',
-  report_text: '5층 사무실 구역에서 연기가 복도까지 확산되고 있습니다.',
-  fire_floor: '5층',
-  smoke_spread: true,
-  people_trapped: true,
+  address: '',
+  report_text: '',
+  fire_floor: '',
+  smoke_spread: false,
+  people_trapped: false,
 };
 
 export default function FirefighterDashboard({ onBack }) {
@@ -49,10 +49,6 @@ export default function FirefighterDashboard({ onBack }) {
     }
   };
 
-  const loadDemoIncident = async () => {
-    await loadIncidentBriefing(1, '대표 신고 현장 브리핑을 불러오지 못했습니다.');
-  };
-
   const loadIncidentBriefing = async (id, message = '선택 신고 현장 브리핑을 불러오지 못했습니다.') => {
     setLoading(true);
     setError('');
@@ -84,23 +80,35 @@ export default function FirefighterDashboard({ onBack }) {
             selectedId={selectedIncidentId}
             onSelect={(id) => loadIncidentBriefing(id)}
           />
-          <button className="secondary-button" type="button" onClick={loadDemoIncident} disabled={loading}>
-            대표 신고 브리핑
-          </button>
           <details>
             <summary>수동 브리핑 입력</summary>
             <form className="manual-briefing-form" onSubmit={submit}>
               <label>
                 건물 주소
-                <input value={form.address} onChange={(event) => updateField('address', event.target.value)} />
+                <input
+                  autoComplete="off"
+                  placeholder="예: 시연용 A건물"
+                  value={form.address}
+                  onChange={(event) => updateField('address', event.target.value)}
+                />
               </label>
               <label>
                 신고 내용
-                <textarea rows="5" value={form.report_text} onChange={(event) => updateField('report_text', event.target.value)} />
+                <textarea
+                  rows="5"
+                  placeholder="예: 5층 복도에 연기가 보입니다."
+                  value={form.report_text}
+                  onChange={(event) => updateField('report_text', event.target.value)}
+                />
               </label>
               <label>
                 화재 발생 층
-                <input value={form.fire_floor} onChange={(event) => updateField('fire_floor', event.target.value)} />
+                <input
+                  autoComplete="off"
+                  placeholder="예: 5층"
+                  value={form.fire_floor}
+                  onChange={(event) => updateField('fire_floor', event.target.value)}
+                />
               </label>
               <div className="toggle-grid">
                 <label><input type="checkbox" checked={form.smoke_spread} onChange={(event) => updateField('smoke_spread', event.target.checked)} /> 연기 확산</label>

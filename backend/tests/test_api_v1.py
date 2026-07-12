@@ -28,8 +28,7 @@ def test_incidents_are_wrapped_and_sorted():
     body = response.json()
     incidents = body["data"]["incidents"]
     assert body["success"] is True
-    assert len(incidents) >= 1
-    assert incidents[0]["risk_level"] == "높음"
+    assert incidents == []
 
 
 def test_unknown_incident_returns_common_error():
@@ -48,20 +47,10 @@ def test_control_overview_contains_backend_stats():
     assert response.status_code == 200
     data = response.json()["data"]
     assert data["total_incidents"] == len(data["incidents"])
-    assert data["high_risk_count"] >= 1
+    assert data["total_incidents"] == 0
+    assert data["high_risk_count"] == 0
     assert "risk_counts" in data
     assert "status_counts" in data
-
-
-def test_role_based_incident_endpoints():
-    guide_response = client.get("/api/v1/citizen/incidents/1/evacuation-guide")
-    briefing_response = client.get("/api/v1/firefighter/incidents/1/briefing")
-
-    assert guide_response.status_code == 200
-    assert guide_response.json()["data"]["incident_id"] == 1
-    assert "disclaimer" in guide_response.json()["data"]
-    assert briefing_response.status_code == 200
-    assert briefing_response.json()["data"]["incident_id"] == 1
 
 
 def test_created_citizen_report_is_visible_to_other_roles():
@@ -91,3 +80,7 @@ def test_created_citizen_report_is_visible_to_other_roles():
     briefing_response = client.get(f"/api/v1/firefighter/incidents/{created['id']}/briefing")
     assert briefing_response.status_code == 200
     assert briefing_response.json()["data"]["incident_id"] == created["id"]
+
+    guide_response = client.get(f"/api/v1/citizen/incidents/{created['id']}/evacuation-guide")
+    assert guide_response.status_code == 200
+    assert guide_response.json()["data"]["incident_id"] == created["id"]
