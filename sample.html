@@ -548,7 +548,7 @@
   <div id="app"></div>
 
   <script>
-    const incidents = [
+    let incidents = [
       {
         id: 1,
         address: '부산광역시 해운대구 A빌딩',
@@ -626,6 +626,60 @@
     let selectedIncidentId = 1;
     let citizenResult = null;
     let firefighterResult = null;
+
+    function createGuideFromIncident(incident) {
+      return {
+        guide: `${incident.address} ${incident.fire_floor} 기준 안내입니다. 문을 닫고 연기가 들어오는 틈을 막은 뒤 119에 현재 위치와 층수를 반복해서 알리세요.`,
+        priority_actions: [
+          '연기 아래쪽으로 몸을 낮추고 짧게 호흡하기',
+          '문틈을 젖은 천이나 옷으로 막기',
+          '창가나 잘 보이는 위치에서 구조 신호 보내기',
+          '낮은 자세로 호흡하고 이동 최소화하기'
+        ],
+        warning: '엘리베이터는 사용하지 마세요. 상황이 악화되면 즉시 119와 현장 안내를 우선하세요.',
+        disclaimer: '현재 입력된 정보를 기준으로 한 참고 안내입니다. 실제 상황에서는 119와 현장 안내를 우선하세요.'
+      };
+    }
+
+    function createBriefingFromIncident(incident) {
+      return {
+        ...demoBriefing,
+        summary: `${incident.address} ${incident.fire_floor}에서 시민 입력 신고가 접수되었습니다. 신고 내용: ${incident.summary} 건물 정보는 시연용 기본 건물 데이터를 사용합니다.`,
+        risk_level: incident.risk_level
+      };
+    }
+
+    function createCitizenReportFromSample() {
+      const address = document.getElementById('citizen-address').value.trim() || '시연용 신규 건물';
+      const floor = document.getElementById('citizen-floor').value.trim() || '미확인 층';
+      const note = document.getElementById('citizen-note').value.trim();
+      const hasSmoke = document.getElementById('citizen-smoke').checked;
+      const hasFlame = document.getElementById('citizen-flame').checked;
+      const stairsAvailable = document.getElementById('citizen-stairs').checked;
+      const isTrapped = document.getElementById('citizen-trapped').checked;
+      const hasVulnerablePeople = document.getElementById('citizen-vulnerable').checked;
+      const score = Number(hasSmoke) + Number(hasFlame) * 2 + Number(!stairsAvailable) + Number(isTrapped) * 2 + Number(hasVulnerablePeople);
+      const riskLevel = score >= 4 ? '높음' : score >= 2 ? '중간' : '낮음';
+      const conditions = [
+        hasSmoke ? '연기 발생' : '',
+        hasFlame ? '불꽃 목격' : '',
+        !stairsAvailable ? '계단 이용 불확실' : '',
+        isTrapped ? '신고자 고립 가능' : '',
+        hasVulnerablePeople ? '노약자/아이/장애인 동행' : ''
+      ].filter(Boolean);
+      const incident = {
+        id: Math.max(...incidents.map((item) => item.id)) + 1,
+        address,
+        fire_floor: floor,
+        risk_level: riskLevel,
+        status: '접수됨',
+        summary: `${floor}에서 시민 입력 신고 접수. ${conditions.length ? conditions.join(', ') : '세부 위험 정보 제한적'}.${note ? ` 추가 메모: ${note}` : ''}`
+      };
+      incidents = [incident, ...incidents];
+      selectedIncidentId = incident.id;
+      citizenResult = createGuideFromIncident(incident);
+      renderCitizen();
+    }
 
     function statCard(value, label) {
       return `<div class="stat-card"><strong>${value}</strong><span>${label}</span></div>`;
@@ -721,11 +775,11 @@
 
     function renderCitizen() {
       const result = citizenResult ? `
-        ${resultCard('참고용 대피 안내', `<p class="guide-text">${demoGuide.guide}</p>`, 'alert')}
-        ${resultCard('우선 행동 목록', `<ol class="action-list">${demoGuide.priority_actions.map((item) => `<li>${item}</li>`).join('')}</ol>`)}
-        ${resultCard('경고', `<p>${demoGuide.warning}</p>`)}
-        ${resultCard('안내 범위', `<p>${demoGuide.disclaimer}</p>`)}
-      ` : resultCard('대피 안내 대기', '<p>왼쪽 정보를 입력하거나 대표 신고로 보기 버튼을 누르면 더미 안내가 표시됩니다.</p>');
+        ${resultCard('참고용 대피 안내', `<p class="guide-text">${citizenResult.guide}</p>`, 'alert')}
+        ${resultCard('우선 행동 목록', `<ol class="action-list">${citizenResult.priority_actions.map((item) => `<li>${item}</li>`).join('')}</ol>`)}
+        ${resultCard('경고', `<p>${citizenResult.warning}</p>`)}
+        ${resultCard('안내 범위', `<p>${citizenResult.disclaimer}</p>`)}
+      ` : resultCard('대피 안내 대기', '<p>왼쪽 정보를 입력하고 시연용 신고를 등록하면 같은 신고가 소방관과 중앙 통제 화면에도 표시됩니다.</p>');
 
       document.getElementById('app').innerHTML = layout(
         'CITIZEN EVACUATION',
@@ -733,18 +787,19 @@
         '복잡한 기능 없이 현재 상태만 입력하고 바로 행동 지침을 확인합니다.',
         `
           <section class="dashboard-grid container">
-            <form class="panel form-panel" onsubmit="event.preventDefault(); citizenResult = true; renderCitizen();">
-              <label>현재 위치 또는 주소<input value="부산광역시 해운대구 A빌딩" /></label>
-              <label>현재 층<input value="5층" /></label>
+            <form class="panel form-panel" onsubmit="event.preventDefault(); createCitizenReportFromSample();">
+              <label>현재 위치 또는 주소<input id="citizen-address" value="시연용 신규 건물" autocomplete="off" /></label>
+              <label>현재 층<input id="citizen-floor" value="7층" autocomplete="off" /></label>
+              <label>추가 상황 메모<textarea id="citizen-note" rows="4">복도 쪽에 연기가 보입니다.</textarea></label>
               <div class="toggle-grid">
-                <label><input type="checkbox" checked /> 연기가 많음</label>
-                <label><input type="checkbox" /> 불꽃이 보임</label>
-                <label><input type="checkbox" checked /> 계단 이용 가능</label>
-                <label><input type="checkbox" /> 갇혀 있음</label>
-                <label><input type="checkbox" /> 노약자/아이/장애인 동행</label>
+                <label><input id="citizen-smoke" type="checkbox" checked /> 연기가 많음</label>
+                <label><input id="citizen-flame" type="checkbox" /> 불꽃이 보임</label>
+                <label><input id="citizen-stairs" type="checkbox" checked /> 계단 이용 가능</label>
+                <label><input id="citizen-trapped" type="checkbox" /> 갇혀 있음</label>
+                <label><input id="citizen-vulnerable" type="checkbox" /> 노약자/아이/장애인 동행</label>
               </div>
-              <button class="primary-button" type="submit">대피 안내 생성</button>
-              <button class="secondary-button" type="button" onclick="citizenResult = true; renderCitizen();">대표 신고로 보기</button>
+              <button class="primary-button" type="submit">시연용 신고 등록</button>
+              <button class="secondary-button" type="button" onclick="citizenResult = demoGuide; renderCitizen();">대표 신고로 보기</button>
             </form>
             <div class="result-stack">${result}</div>
           </section>
@@ -753,6 +808,14 @@
     }
 
     function renderFirefighter() {
+      const selected = incidents.find((incident) => incident.id === selectedIncidentId) || incidents[0];
+      const briefingList = incidents.map((incident) => `
+        <button class="incident-item ${selected.id === incident.id ? 'is-active' : ''}" type="button" onclick="selectedIncidentId = ${incident.id}; firefighterResult = createBriefingFromIncident(incidents.find((item) => item.id === ${incident.id})); renderFirefighter();">
+          <span class="risk-pill risk-${incident.risk_level}">${incident.risk_level}</span>
+          <strong>${incident.address}</strong>
+          <small>${incident.fire_floor} / ${incident.status}</small>
+        </button>
+      `).join('');
       const result = firefighterResult ? `
         ${resultCard('건물 정보', `<dl class="info-list">
           <div><dt>건물명</dt><dd>${building.name}</dd></div>
@@ -761,11 +824,11 @@
           <div><dt>구조</dt><dd>${building.structure}</dd></div>
           <div><dt>위험 메모</dt><dd>${building.risk_note}</dd></div>
         </dl>`)}
-        ${resultCard(`현장 상황 요약 / 위험도 ${demoBriefing.risk_level}`, `<p>${demoBriefing.summary}</p>`, 'alert')}
-        ${resultCard('대응 우선순위', `<ol class="action-list">${demoBriefing.priorities.map((item) => `<li>${item}</li>`).join('')}</ol>`)}
-        ${resultCard('현장 대응 체크리스트', `<ul class="check-list">${demoBriefing.checklist.map((item) => `<li>${item}</li>`).join('')}</ul>`)}
-        ${resultCard('브리핑 범위', `<p>${demoBriefing.disclaimer}</p>`)}
-      ` : resultCard('상황 요약 대기', '<p>신고 정보를 입력하거나 대표 신고 브리핑 버튼을 누르면 더미 현장 요약이 표시됩니다.</p>');
+        ${resultCard(`현장 상황 요약 / 위험도 ${firefighterResult.risk_level}`, `<p>${firefighterResult.summary}</p>`, 'alert')}
+        ${resultCard('대응 우선순위', `<ol class="action-list">${firefighterResult.priorities.map((item) => `<li>${item}</li>`).join('')}</ol>`)}
+        ${resultCard('현장 대응 체크리스트', `<ul class="check-list">${firefighterResult.checklist.map((item) => `<li>${item}</li>`).join('')}</ul>`)}
+        ${resultCard('브리핑 범위', `<p>${firefighterResult.disclaimer}</p>`)}
+      ` : resultCard('상황 요약 대기', '<p>신고 목록에서 항목을 선택하면 해당 신고의 더미 현장 브리핑이 표시됩니다.</p>');
 
       document.getElementById('app').innerHTML = layout(
         'COMMAND RESPONSE',
@@ -773,19 +836,16 @@
         '신고 내용과 건물 정보를 결합해 현장 대응에 필요한 정보를 빠르게 요약합니다.',
         `
           <section class="dashboard-grid container">
-            <form class="panel form-panel" onsubmit="event.preventDefault(); firefighterResult = true; renderFirefighter();">
-              <label>건물 주소<input value="부산광역시 해운대구 A빌딩" /></label>
-              <label>신고 내용<textarea rows="5">5층 사무실 구역에서 연기가 복도까지 확산되고 있습니다.</textarea></label>
-              <label>화재 발생 층<input value="5층" /></label>
-              <div class="toggle-grid">
-                <label><input type="checkbox" checked /> 연기 확산</label>
-                <label><input type="checkbox" checked /> 인명 고립</label>
+            <div class="panel form-panel">
+              <div>
+                <span class="eyebrow">INCIDENT QUEUE</span>
+                <h2>신고 기반 브리핑</h2>
               </div>
-              <button class="primary-button" type="submit">상황 요약 생성</button>
-              <button class="secondary-button" type="button" onclick="firefighterResult = true; renderFirefighter();">대표 신고 브리핑</button>
-            </form>
+              <div class="incident-list">${briefingList}</div>
+              <button class="secondary-button" type="button" onclick="selectedIncidentId = 1; firefighterResult = createBriefingFromIncident(incidents.find((item) => item.id === 1)); renderFirefighter();">대표 신고 브리핑</button>
+            </div>
             <div class="result-stack">
-              ${mapPlaceholder('FIREFIGHTER MAP PLACEHOLDER', [incidents[0]], incidents[0])}
+              ${mapPlaceholder('FIREFIGHTER MAP PLACEHOLDER', incidents, selected)}
               ${result}
             </div>
           </section>

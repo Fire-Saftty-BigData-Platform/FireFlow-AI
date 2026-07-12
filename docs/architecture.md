@@ -15,6 +15,7 @@ FireFlow AI는 화재 상황에서 **시민**, **소방관**, **중앙 통제 �
 - 첫 화면에서 시민·소방관·중앙 통제 역할 선택
 - 역할별 독립 화면 제공
 - 화재 신고 및 건물 정보 조회
+- 시민 입력 기반 시연용 신고 생성
 - 시민용 대피 행동 지침 제공
 - 소방관용 현장 브리핑 제공
 - 중앙 통제용 신고 목록, 위험도, 출동 상태 제공
@@ -485,25 +486,48 @@ GET /api/v1/incidents
 GET /api/v1/incidents/{incident_id}
 ```
 
-### 9.4 시민용 대피 안내
+### 9.4 시민 입력 신고 생성
+
+공모전 MVP 내부에서만 사용하는 시연용 신고 생성 API입니다. 실제 119 신고 접수 시스템이나 출동 시스템으로 전송하지 않습니다.
+
+```http
+POST /api/v1/incidents/citizen-reports
+```
+
+```json
+{
+  "location": "시연용 A건물",
+  "current_floor": "5층",
+  "has_smoke": true,
+  "has_flame": false,
+  "stairs_available": true,
+  "is_trapped": false,
+  "has_vulnerable_people": true,
+  "report_note": "복도 쪽에 연기가 보입니다."
+}
+```
+
+생성된 신고는 같은 백엔드 실행 세션 안에서 신고 목록, 소방관 브리핑, 중앙 통제 현황에 표시됩니다.
+
+### 9.5 시민용 대피 안내
 
 ```http
 GET /api/v1/citizen/incidents/{incident_id}/evacuation-guide
 ```
 
-### 9.5 소방관용 현장 브리핑
+### 9.6 소방관용 현장 브리핑
 
 ```http
 GET /api/v1/firefighter/incidents/{incident_id}/briefing
 ```
 
-### 9.6 중앙 통제 현황
+### 9.7 중앙 통제 현황
 
 ```http
 GET /api/v1/control/overview
 ```
 
-### 9.7 출동 상태 변경
+### 9.8 출동 상태 변경
 
 MVP 시연에 필요한 경우에만 제공합니다.
 

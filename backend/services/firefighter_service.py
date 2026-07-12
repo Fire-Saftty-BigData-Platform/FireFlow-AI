@@ -68,8 +68,8 @@ def create_firefighter_briefing_for_incident(incident_id: int):
         address=incident["address"],
         report_text=incident["summary"],
         fire_floor=incident["fire_floor"],
-        smoke_spread="연기" in incident["summary"],
-        people_trapped="고립" in incident["summary"],
+        smoke_spread=incident.get("report", {}).get("has_smoke", "연기" in incident["summary"]),
+        people_trapped=incident.get("report", {}).get("is_trapped", "고립" in incident["summary"]),
     )
 
     briefing = create_firefighter_summary(payload)

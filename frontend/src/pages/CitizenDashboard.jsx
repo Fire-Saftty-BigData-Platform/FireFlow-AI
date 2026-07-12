@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Layout from '../components/Layout.jsx';
 import ResultCard from '../components/ResultCard.jsx';
-import { createEvacuationGuide, getEvacuationGuideForIncident } from '../services/api.js';
+import { createCitizenIncidentReport, getEvacuationGuideForIncident } from '../services/api.js';
 
 const initialForm = {
   location: '부산광역시 해운대구 A빌딩',
@@ -11,6 +11,7 @@ const initialForm = {
   stairs_available: true,
   is_trapped: false,
   has_vulnerable_people: false,
+  report_note: '',
 };
 
 export default function CitizenDashboard({ onBack }) {
@@ -28,9 +29,10 @@ export default function CitizenDashboard({ onBack }) {
     setLoading(true);
     setError('');
     try {
-      setResult(await createEvacuationGuide(form));
+      const data = await createCitizenIncidentReport(form);
+      setResult(data.evacuation_guide);
     } catch (apiError) {
-      setError('대피 안내를 생성하지 못했습니다. 백엔드 서버 상태를 확인하세요.');
+      setError('시연용 신고를 생성하지 못했습니다. 백엔드 서버 상태를 확인하세요.');
     } finally {
       setLoading(false);
     }
@@ -65,6 +67,10 @@ export default function CitizenDashboard({ onBack }) {
             현재 층
             <input value={form.current_floor} onChange={(event) => updateField('current_floor', event.target.value)} />
           </label>
+          <label>
+            추가 상황 메모
+            <textarea rows="4" value={form.report_note} onChange={(event) => updateField('report_note', event.target.value)} />
+          </label>
 
           <div className="toggle-grid">
             <label><input type="checkbox" checked={form.has_smoke} onChange={(event) => updateField('has_smoke', event.target.checked)} /> 연기가 많음</label>
@@ -75,7 +81,7 @@ export default function CitizenDashboard({ onBack }) {
           </div>
 
           <button className="primary-button large-button" type="submit" disabled={loading}>
-            {loading ? '생성 중' : '대피 안내 생성'}
+            {loading ? '등록 중' : '시연용 신고 등록'}
           </button>
           <button className="secondary-button" type="button" onClick={loadDemoIncident} disabled={loading}>
             대표 신고로 보기
@@ -105,7 +111,7 @@ export default function CitizenDashboard({ onBack }) {
             </>
           ) : (
             <ResultCard title="대피 안내 대기">
-              <p>왼쪽 정보를 입력하고 버튼을 누르면 더미 AI 안내가 표시됩니다.</p>
+              <p>왼쪽 정보를 입력하고 시연용 신고를 등록하면 대피 안내가 표시되고, 같은 신고가 소방관과 중앙 통제 화면에도 표시됩니다.</p>
             </ResultCard>
           )}
         </div>

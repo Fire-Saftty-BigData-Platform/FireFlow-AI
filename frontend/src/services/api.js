@@ -25,6 +25,13 @@ export function createEvacuationGuide(payload) {
   });
 }
 
+export function createCitizenIncidentReport(payload) {
+  return request('/incidents/citizen-reports', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getEvacuationGuideForIncident(id) {
   return request(`/citizen/incidents/${id}/evacuation-guide`);
 }

@@ -10,11 +10,11 @@ def create_evacuation_guide_for_incident(incident_id: int):
     payload = EvacuationGuideRequest(
         location=incident["address"],
         current_floor=incident["fire_floor"],
-        has_smoke="연기" in incident["summary"],
-        has_flame="화재" in incident["summary"],
-        stairs_available="계단 이용 가능" in incident["summary"],
-        is_trapped="고립" in incident["summary"],
-        has_vulnerable_people=False,
+        has_smoke=incident.get("report", {}).get("has_smoke", "연기" in incident["summary"]),
+        has_flame=incident.get("report", {}).get("has_flame", "화재" in incident["summary"] or "불꽃" in incident["summary"]),
+        stairs_available=incident.get("report", {}).get("stairs_available", "계단 이용 가능" in incident["summary"]),
+        is_trapped=incident.get("report", {}).get("is_trapped", "고립" in incident["summary"]),
+        has_vulnerable_people=incident.get("report", {}).get("has_vulnerable_people", False),
     )
 
     guide = create_evacuation_guide(payload)

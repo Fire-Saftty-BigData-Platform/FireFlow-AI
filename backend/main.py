@@ -4,11 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from schemas.api_response import ApiResponse, error_response, success_response
-from schemas.request_models import EvacuationGuideRequest, FirefighterSummaryRequest
+from schemas.request_models import CitizenIncidentReportRequest, EvacuationGuideRequest, FirefighterSummaryRequest
 from services.control_service import create_control_overview
 from services.evacuation_service import create_evacuation_guide, create_evacuation_guide_for_incident
 from services.firefighter_service import create_firefighter_briefing_for_incident, create_firefighter_summary
-from services.incident_service import get_incident_by_id, get_incidents
+from services.incident_service import create_incident_from_citizen_report, get_incident_by_id, get_incidents
 
 app = FastAPI(title="FireFlow AI Backend", version="0.1.0")
 
@@ -49,6 +49,14 @@ def health_check_v1():
 @app.post("/api/v1/citizen/evacuation-guide", response_model=ApiResponse)
 def evacuation_guide(payload: EvacuationGuideRequest):
     return success_response(create_evacuation_guide(payload))
+
+
+@app.post("/api/v1/incidents/citizen-reports", response_model=ApiResponse)
+def create_citizen_report(payload: CitizenIncidentReportRequest):
+    incident = create_incident_from_citizen_report(payload)
+    guide = create_evacuation_guide(payload)
+    guide["incident_id"] = incident["id"]
+    return success_response({"incident": incident, "evacuation_guide": guide})
 
 
 @app.get("/api/v1/citizen/incidents/{incident_id}/evacuation-guide", response_model=ApiResponse)

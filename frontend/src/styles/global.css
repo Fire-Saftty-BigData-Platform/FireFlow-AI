@@ -362,6 +362,25 @@ button {
   gap: 22px;
 }
 
+.manual-briefing-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+details {
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 0;
+}
+
+summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .form-panel label {
   display: flex;
   flex-direction: column;

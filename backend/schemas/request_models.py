@@ -11,6 +11,10 @@ class EvacuationGuideRequest(BaseModel):
     has_vulnerable_people: bool
 
 
+class CitizenIncidentReportRequest(EvacuationGuideRequest):
+    report_note: str = ""
+
+
 class FirefighterSummaryRequest(BaseModel):
     address: str
     report_text: str

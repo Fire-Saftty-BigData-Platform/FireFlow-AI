@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import IncidentList from '../components/IncidentList.jsx';
 import Layout from '../components/Layout.jsx';
 import MapPlaceholder from '../components/MapPlaceholder.jsx';
 import ResultCard from '../components/ResultCard.jsx';
-import { createFirefighterSummary, getFirefighterBriefingForIncident } from '../services/api.js';
+import { createFirefighterSummary, getFirefighterBriefingForIncident, getIncidents } from '../services/api.js';
 
 const initialForm = {
   address: '부산광역시 해운대구 A빌딩',
@@ -15,8 +16,21 @@ const initialForm = {
 export default function FirefighterDashboard({ onBack }) {
   const [form, setForm] = useState(initialForm);
   const [result, setResult] = useState(null);
+  const [incidents, setIncidents] = useState([]);
+  const [selectedIncidentId, setSelectedIncidentId] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getIncidents()
+      .then((data) => {
+        setIncidents(data.incidents);
+        if (data.incidents.length > 0) {
+          setSelectedIncidentId(data.incidents[0].id);
+        }
+      })
+      .catch(() => setError('신고 목록을 불러오지 못했습니다. 백엔드 서버 상태를 확인하세요.'));
+  }, []);
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -36,12 +50,17 @@ export default function FirefighterDashboard({ onBack }) {
   };
 
   const loadDemoIncident = async () => {
+    await loadIncidentBriefing(1, '대표 신고 현장 브리핑을 불러오지 못했습니다.');
+  };
+
+  const loadIncidentBriefing = async (id, message = '선택 신고 현장 브리핑을 불러오지 못했습니다.') => {
     setLoading(true);
     setError('');
     try {
-      setResult(await getFirefighterBriefingForIncident(1));
+      setSelectedIncidentId(id);
+      setResult(await getFirefighterBriefingForIncident(id));
     } catch (apiError) {
-      setError('대표 신고 현장 브리핑을 불러오지 못했습니다.');
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -55,37 +74,55 @@ export default function FirefighterDashboard({ onBack }) {
       onBack={onBack}
     >
       <section className="dashboard-grid container">
-        <form className="panel form-panel" onSubmit={submit}>
-          <label>
-            건물 주소
-            <input value={form.address} onChange={(event) => updateField('address', event.target.value)} />
-          </label>
-          <label>
-            신고 내용
-            <textarea rows="5" value={form.report_text} onChange={(event) => updateField('report_text', event.target.value)} />
-          </label>
-          <label>
-            화재 발생 층
-            <input value={form.fire_floor} onChange={(event) => updateField('fire_floor', event.target.value)} />
-          </label>
-          <div className="toggle-grid">
-            <label><input type="checkbox" checked={form.smoke_spread} onChange={(event) => updateField('smoke_spread', event.target.checked)} /> 연기 확산</label>
-            <label><input type="checkbox" checked={form.people_trapped} onChange={(event) => updateField('people_trapped', event.target.checked)} /> 인명 고립</label>
+        <div className="panel form-panel">
+          <div className="section-heading">
+            <span className="eyebrow">INCIDENT QUEUE</span>
+            <h2>신고 기반 브리핑</h2>
           </div>
-          <button className="primary-button" type="submit" disabled={loading}>
-            {loading ? '생성 중' : '상황 요약 생성'}
-          </button>
+          <IncidentList
+            incidents={incidents}
+            selectedId={selectedIncidentId}
+            onSelect={(id) => loadIncidentBriefing(id)}
+          />
           <button className="secondary-button" type="button" onClick={loadDemoIncident} disabled={loading}>
             대표 신고 브리핑
           </button>
+          <details>
+            <summary>수동 브리핑 입력</summary>
+            <form className="manual-briefing-form" onSubmit={submit}>
+              <label>
+                건물 주소
+                <input value={form.address} onChange={(event) => updateField('address', event.target.value)} />
+              </label>
+              <label>
+                신고 내용
+                <textarea rows="5" value={form.report_text} onChange={(event) => updateField('report_text', event.target.value)} />
+              </label>
+              <label>
+                화재 발생 층
+                <input value={form.fire_floor} onChange={(event) => updateField('fire_floor', event.target.value)} />
+              </label>
+              <div className="toggle-grid">
+                <label><input type="checkbox" checked={form.smoke_spread} onChange={(event) => updateField('smoke_spread', event.target.checked)} /> 연기 확산</label>
+                <label><input type="checkbox" checked={form.people_trapped} onChange={(event) => updateField('people_trapped', event.target.checked)} /> 인명 고립</label>
+              </div>
+              <button className="primary-button" type="submit" disabled={loading}>
+                {loading ? '생성 중' : '상황 요약 생성'}
+              </button>
+            </form>
+          </details>
           <button className="secondary-button" type="button" disabled>
             음성 신고 입력 기능 준비 중
           </button>
           {error && <p className="error-text">{error}</p>}
-        </form>
+        </div>
 
         <div className="result-stack">
-          <MapPlaceholder label="FIREFIGHTER MAP PLACEHOLDER" />
+          <MapPlaceholder
+            label="FIREFIGHTER MAP PLACEHOLDER"
+            incidents={incidents}
+            selectedIncident={incidents.find((incident) => incident.id === selectedIncidentId)}
+          />
           {result ? (
             <>
               <ResultCard title="건물 정보">

@@ -134,6 +134,25 @@ Windows PowerShell에서는 가상환경 활성화 명령이 다음과 같습니
 }
 ```
 
+### POST /api/v1/incidents/citizen-reports
+
+일반 사용자가 입력한 상황을 시연용 신고로 등록하고, 같은 응답에서 대피 안내를 반환합니다. 생성된 신고는 소방관 화면과 중앙 통제 화면의 신고 목록에 함께 표시됩니다.
+
+```json
+{
+  "location": "시연용 A건물",
+  "current_floor": "5층",
+  "has_smoke": true,
+  "has_flame": false,
+  "stairs_available": true,
+  "is_trapped": false,
+  "has_vulnerable_people": true,
+  "report_note": "복도 쪽에 연기가 보입니다."
+}
+```
+
+응답의 `data.incident`는 생성된 시연용 신고이고, `data.evacuation_guide`는 시민 화면에 표시할 참고 안내입니다. 이 데이터는 MVP 실행 중 사용하는 시연용 저장소에 보관되며 실제 119 기관 시스템으로 전송되지 않습니다.
+
 ### GET /api/v1/citizen/incidents/{incident_id}/evacuation-guide
 
 특정 신고 기준 일반 사용자 대피 안내 조회

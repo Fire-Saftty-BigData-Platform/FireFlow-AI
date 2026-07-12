@@ -62,3 +62,32 @@ def test_role_based_incident_endpoints():
     assert "disclaimer" in guide_response.json()["data"]
     assert briefing_response.status_code == 200
     assert briefing_response.json()["data"]["incident_id"] == 1
+
+
+def test_created_citizen_report_is_visible_to_other_roles():
+    report_response = client.post(
+        "/api/v1/incidents/citizen-reports",
+        json={
+            "location": "시연용 신규 건물",
+            "current_floor": "7층",
+            "has_smoke": True,
+            "has_flame": True,
+            "stairs_available": False,
+            "is_trapped": True,
+            "has_vulnerable_people": False,
+            "report_note": "복도 쪽 열기와 연기가 강함",
+        },
+    )
+
+    assert report_response.status_code == 200
+    created = report_response.json()["data"]["incident"]
+    assert created["address"] == "시연용 신규 건물"
+    assert created["risk_level"] == "높음"
+
+    incidents_response = client.get("/api/v1/incidents")
+    incident_ids = [incident["id"] for incident in incidents_response.json()["data"]["incidents"]]
+    assert created["id"] in incident_ids
+
+    briefing_response = client.get(f"/api/v1/firefighter/incidents/{created['id']}/briefing")
+    assert briefing_response.status_code == 200
+    assert briefing_response.json()["data"]["incident_id"] == created["id"]
