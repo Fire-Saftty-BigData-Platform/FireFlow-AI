@@ -1,20 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import IncidentList from '../components/IncidentList.jsx';
 import Layout from '../components/Layout.jsx';
 import MapPlaceholder from '../components/MapPlaceholder.jsx';
 import ResultCard from '../components/ResultCard.jsx';
 import StatCard from '../components/StatCard.jsx';
-import { getIncident, getIncidents } from '../services/api.js';
+import { getControlOverview, getIncident } from '../services/api.js';
 
 export default function ControlDashboard({ onBack }) {
   const [incidents, setIncidents] = useState([]);
   const [selectedIncident, setSelectedIncident] = useState(null);
+  const [stats, setStats] = useState({ total: 0, highRisk: 0, active: 0 });
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getIncidents()
+    getControlOverview()
       .then((data) => {
         setIncidents(data.incidents);
+        setStats({
+          total: data.total_incidents,
+          highRisk: data.high_risk_count,
+          active: data.active_count,
+        });
         if (data.incidents.length > 0) {
           return getIncident(data.incidents[0].id);
         }
@@ -25,12 +31,6 @@ export default function ControlDashboard({ onBack }) {
       })
       .catch(() => setError('신고 목록을 불러오지 못했습니다. 백엔드 서버 상태를 확인하세요.'));
   }, []);
-
-  const stats = useMemo(() => {
-    const highRisk = incidents.filter((incident) => incident.risk_level === '높음').length;
-    const active = incidents.filter((incident) => incident.status !== '완료').length;
-    return { total: incidents.length, highRisk, active };
-  }, [incidents]);
 
   const selectIncident = async (id) => {
     setError('');
@@ -69,7 +69,11 @@ export default function ControlDashboard({ onBack }) {
         </div>
 
         <div className="result-stack">
-          <MapPlaceholder label="CONTROL MAP PLACEHOLDER" />
+          <MapPlaceholder
+            label="CONTROL MAP PLACEHOLDER"
+            incidents={incidents}
+            selectedIncident={selectedIncident}
+          />
           {selectedIncident ? (
             <ResultCard title="신고 상세">
               <dl className="info-list">

@@ -1,5 +1,6 @@
 from schemas.request_models import FirefighterSummaryRequest
 from services.building_service import find_building_by_address
+from services.incident_service import get_incident_by_id
 
 
 def _risk_level(payload: FirefighterSummaryRequest):
@@ -54,4 +55,24 @@ def create_firefighter_summary(payload: FirefighterSummaryRequest):
         "risk_level": risk_level,
         "priorities": priorities,
         "checklist": checklist,
+        "disclaimer": "시연용 더미 브리핑입니다. 화재 규모, 구조 안정성, 인명 상태는 현장 확인이 필요합니다.",
     }
+
+
+def create_firefighter_briefing_for_incident(incident_id: int):
+    incident = get_incident_by_id(incident_id)
+    if not incident:
+        return None
+
+    payload = FirefighterSummaryRequest(
+        address=incident["address"],
+        report_text=incident["summary"],
+        fire_floor=incident["fire_floor"],
+        smoke_spread="연기" in incident["summary"],
+        people_trapped="고립" in incident["summary"],
+    )
+
+    briefing = create_firefighter_summary(payload)
+    briefing["incident_id"] = incident_id
+    briefing["dispatch_status"] = incident["status"]
+    return briefing

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Layout from '../components/Layout.jsx';
 import MapPlaceholder from '../components/MapPlaceholder.jsx';
 import ResultCard from '../components/ResultCard.jsx';
-import { createFirefighterSummary } from '../services/api.js';
+import { createFirefighterSummary, getFirefighterBriefingForIncident } from '../services/api.js';
 
 const initialForm = {
   address: '부산광역시 해운대구 A빌딩',
@@ -30,6 +30,18 @@ export default function FirefighterDashboard({ onBack }) {
       setResult(await createFirefighterSummary(form));
     } catch (apiError) {
       setError('상황 요약을 생성하지 못했습니다. 백엔드 서버 상태를 확인하세요.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadDemoIncident = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setResult(await getFirefighterBriefingForIncident(1));
+    } catch (apiError) {
+      setError('대표 신고 현장 브리핑을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -63,6 +75,9 @@ export default function FirefighterDashboard({ onBack }) {
           <button className="primary-button" type="submit" disabled={loading}>
             {loading ? '생성 중' : '상황 요약 생성'}
           </button>
+          <button className="secondary-button" type="button" onClick={loadDemoIncident} disabled={loading}>
+            대표 신고 브리핑
+          </button>
           <button className="secondary-button" type="button" disabled>
             음성 신고 입력 기능 준비 중
           </button>
@@ -91,6 +106,11 @@ export default function FirefighterDashboard({ onBack }) {
               <ResultCard title="현장 대응 체크리스트">
                 <ul className="check-list">{result.checklist.map((item) => <li key={item}>{item}</li>)}</ul>
               </ResultCard>
+              {result.disclaimer && (
+                <ResultCard title="브리핑 범위">
+                  <p>{result.disclaimer}</p>
+                </ResultCard>
+              )}
             </>
           ) : (
             <ResultCard title="상황 요약 대기">

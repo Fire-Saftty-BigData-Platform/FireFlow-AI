@@ -1,4 +1,26 @@
 from schemas.request_models import EvacuationGuideRequest
+from services.incident_service import get_incident_by_id
+
+
+def create_evacuation_guide_for_incident(incident_id: int):
+    incident = get_incident_by_id(incident_id)
+    if not incident:
+        return None
+
+    payload = EvacuationGuideRequest(
+        location=incident["address"],
+        current_floor=incident["fire_floor"],
+        has_smoke="연기" in incident["summary"],
+        has_flame="화재" in incident["summary"],
+        stairs_available="계단 이용 가능" in incident["summary"],
+        is_trapped="고립" in incident["summary"],
+        has_vulnerable_people=False,
+    )
+
+    guide = create_evacuation_guide(payload)
+    guide["incident_id"] = incident_id
+    guide["disclaimer"] = "현재 입력된 정보를 기준으로 한 참고 안내입니다. 실제 상황에서는 119와 현장 안내를 우선하세요."
+    return guide
 
 
 def create_evacuation_guide(payload: EvacuationGuideRequest):
@@ -32,10 +54,12 @@ def create_evacuation_guide(payload: EvacuationGuideRequest):
     if payload.has_vulnerable_people:
         actions.append("노약자, 아이, 장애인은 한 명씩 부축하고 이동 속도를 맞추기")
 
-    warning = "엘리베이터는 사용하지 마세요. 상황이 악화되면 즉시 119 안내를 우선하세요."
+    warning = "엘리베이터는 사용하지 마세요. 상황이 악화되면 즉시 119와 현장 안내를 우선하세요."
 
     return {
         "guide": f"{payload.location} {payload.current_floor} 기준 안내입니다. {guide}",
         "priority_actions": actions,
+        "avoid_actions": ["엘리베이터 사용", "연기가 많은 방향으로 이동", "대피 후 건물 재진입"],
         "warning": warning,
+        "disclaimer": "현재 입력된 정보를 기준으로 한 참고 안내입니다. 실제 상황에서는 119와 현장 안내를 우선하세요.",
     }

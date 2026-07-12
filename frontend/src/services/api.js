@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -9,31 +9,45 @@ async function request(path, options = {}) {
     ...options,
   });
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+  const payload = await response.json();
+
+  if (!response.ok || payload.success === false) {
+    throw new Error(payload.error?.message || `API request failed: ${response.status}`);
   }
 
-  return response.json();
+  return payload.data;
 }
 
 export function createEvacuationGuide(payload) {
-  return request('/api/evacuation-guide', {
+  return request('/citizen/evacuation-guide', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export function getEvacuationGuideForIncident(id) {
+  return request(`/citizen/incidents/${id}/evacuation-guide`);
 }
 
 export function createFirefighterSummary(payload) {
-  return request('/api/firefighter-summary', {
+  return request('/firefighter/summary', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
+export function getFirefighterBriefingForIncident(id) {
+  return request(`/firefighter/incidents/${id}/briefing`);
+}
+
 export function getIncidents() {
-  return request('/api/incidents');
+  return request('/incidents');
 }
 
 export function getIncident(id) {
-  return request(`/api/incidents/${id}`);
+  return request(`/incidents/${id}`);
+}
+
+export function getControlOverview() {
+  return request('/control/overview');
 }

@@ -1,17 +1,11 @@
-const riskRank = {
-  높음: 3,
-  중간: 2,
-  낮음: 1,
-};
-
 export default function IncidentList({ incidents, selectedId, onSelect }) {
-  const sortedIncidents = [...incidents].sort(
-    (a, b) => (riskRank[b.risk_level] || 0) - (riskRank[a.risk_level] || 0)
-  );
+  if (incidents.length === 0) {
+    return <p className="empty-text">표시할 신고가 없습니다.</p>;
+  }
 
   return (
     <div className="incident-list">
-      {sortedIncidents.map((incident) => (
+      {incidents.map((incident) => (
         <button
           className={`incident-item ${selectedId === incident.id ? 'is-active' : ''}`}
           type="button"

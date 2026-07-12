@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Layout from '../components/Layout.jsx';
 import ResultCard from '../components/ResultCard.jsx';
-import { createEvacuationGuide } from '../services/api.js';
+import { createEvacuationGuide, getEvacuationGuideForIncident } from '../services/api.js';
 
 const initialForm = {
   location: '부산광역시 해운대구 A빌딩',
@@ -36,6 +36,18 @@ export default function CitizenDashboard({ onBack }) {
     }
   };
 
+  const loadDemoIncident = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setResult(await getEvacuationGuideForIncident(1));
+    } catch (apiError) {
+      setError('대표 신고 대피 안내를 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout
       mode="CITIZEN EVACUATION"
@@ -65,6 +77,9 @@ export default function CitizenDashboard({ onBack }) {
           <button className="primary-button large-button" type="submit" disabled={loading}>
             {loading ? '생성 중' : '대피 안내 생성'}
           </button>
+          <button className="secondary-button" type="button" onClick={loadDemoIncident} disabled={loading}>
+            대표 신고로 보기
+          </button>
           {error && <p className="error-text">{error}</p>}
         </form>
 
@@ -82,6 +97,11 @@ export default function CitizenDashboard({ onBack }) {
               <ResultCard title="경고">
                 <p>{result.warning}</p>
               </ResultCard>
+              {result.disclaimer && (
+                <ResultCard title="안내 범위">
+                  <p>{result.disclaimer}</p>
+                </ResultCard>
+              )}
             </>
           ) : (
             <ResultCard title="대피 안내 대기">
