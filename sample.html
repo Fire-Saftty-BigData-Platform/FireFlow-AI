@@ -292,6 +292,45 @@
       text-transform: none;
     }
 
+    .condition-section {
+      display: grid;
+      gap: 10px;
+      padding: 14px 0;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .condition-section-title {
+      margin: 0;
+      color: var(--muted-text);
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .condition-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .condition-option {
+      display: grid !important;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 8px !important;
+      min-height: 44px;
+      border: 1px solid var(--border-color);
+      padding: 10px 12px !important;
+      font-size: 0.9rem !important;
+      font-weight: 700 !important;
+      text-transform: none !important;
+    }
+
+    .condition-option input {
+      width: auto;
+      margin: 0;
+    }
+
     .primary-button,
     .secondary-button {
       border: 1px solid var(--primary-text);
@@ -540,6 +579,10 @@
       .panel,
       .result-card {
         padding: 24px;
+      }
+
+      .condition-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -860,6 +903,220 @@
               ${mapPlaceholder('CONTROL MAP PLACEHOLDER', incidents, selected)}
               ${detail}
             </div>
+          </section>
+        `
+      );
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function uniqueItems(items) {
+      return items.filter((item, index) => items.indexOf(item) === index);
+    }
+
+    function parseFloorNumber(floor) {
+      const match = String(floor || '').match(/-?\d+/);
+      return match ? Number(match[0]) : null;
+    }
+
+    function noteHasAny(note, keywords) {
+      return keywords.some((keyword) => note.includes(keyword));
+    }
+
+    function createGuideFromIncident(incident) {
+      const report = incident.report || {};
+      const note = String(report.report_note || '').toLowerCase();
+      const floorNumber = parseFloorNumber(incident.fire_floor);
+      const isBasement = String(incident.fire_floor || '').includes('지하') || (floorNumber !== null && floorNumber < 0);
+      const isHighFloor = floorNumber !== null && floorNumber >= 6;
+      const mentionsChild = noteHasAny(note, ['아이', '어린', '유아', '아동']);
+      const mentionsHallwaySmoke = note.includes('복도') && note.includes('연기');
+      const mentionsDoorRisk = noteHasAny(note, ['문', '손잡이', '문고리']) && noteHasAny(note, ['뜨겁', '열', '닫', '안 열']);
+      const mentionsWindow = noteHasAny(note, ['창문', '베란다', '발코니']);
+
+      const actions = ['119에 현재 주소, 층수, 동행자 여부를 먼저 알리세요.'];
+      const avoidActions = ['엘리베이터 사용', '대피 후 건물 재진입', '확인되지 않은 통로로 단독 이동'];
+      const guideParts = [];
+
+      const childCompanion = report.has_child_companion || mentionsChild;
+      const hallwaySmoke = report.hallway_smoke_visible || mentionsHallwaySmoke || report.has_smoke;
+      const doorRisk = report.door_closed || report.door_handle_hot || mentionsDoorRisk;
+
+      if (report.is_trapped) {
+        guideParts.push('현재 위치에서 무리하게 이동하지 말고 구조 요청을 유지하는 상황으로 판단됩니다.');
+        actions.push('문틈을 젖은 수건이나 천으로 막아 연기 유입을 줄이세요.');
+        actions.push('창문이나 외부에서 보이는 위치에서 구조 신호를 보내되, 뛰어내리거나 난간으로 이동하지 마세요.');
+        actions.push('가능하면 바닥 가까이 낮은 자세를 유지하고 통화 배터리를 아끼세요.');
+      } else if (!report.stairs_available || report.has_flame) {
+        guideParts.push('계단이나 복도 이용이 불확실하므로 이동 전 통로 상태를 다시 확인해야 합니다.');
+        actions.push('불꽃이 보이는 방향과 연기가 짙은 방향으로 이동하지 마세요.');
+        actions.push('가까운 방이나 구획된 공간으로 들어가 문을 닫고 119에 위치를 반복해서 알리세요.');
+      } else {
+        guideParts.push('통로가 확인되는 경우에만 낮은 자세로 가까운 계단 방향 대피를 시도하세요.');
+        actions.push('수건이나 옷으로 코와 입을 가리고 벽을 따라 천천히 이동하세요.');
+        actions.push('계단 진입 전 연기와 열기가 강해지는지 확인하고 이상하면 즉시 되돌아가세요.');
+      }
+
+      if (hallwaySmoke) {
+        guideParts.push('복도 쪽 연기 가능성이 있으므로 복도 이동은 특히 주의가 필요합니다.');
+        actions.splice(1, 0, '복도를 지나야 한다면 머리와 몸을 최대한 숙이고, 젖은 천으로 코와 입을 가리세요.');
+        avoidActions.push('연기가 보이는 복도에서 서서 빠르게 뛰기');
+      }
+
+      if (doorRisk) {
+        guideParts.push('문 주변 열기나 닫힌 문 정보가 있어 문을 열기 전 확인이 필요합니다.');
+        actions.splice(1, 0, '문 손잡이를 함부로 잡지 말고 손등으로 문 주변 열기를 확인하세요.');
+        actions.splice(2, 0, '열리지 않는 문은 억지로 열지 말고 다른 위치에서 구조 요청을 이어가세요.');
+        avoidActions.push('뜨겁거나 열리지 않는 문 강제로 열기');
+      }
+
+      if (childCompanion) {
+        guideParts.push('어린아이는 놀라서 구석이나 가구 뒤로 숨을 수 있어 계속 시야 안에 두어야 합니다.');
+        actions.splice(1, 0, '어린아이가 있다면 손을 잡거나 품 가까이에 두고, 구석으로 숨지 않는지 계속 확인하세요.');
+      }
+
+      if (report.has_vulnerable_people) {
+        actions.push('노약자, 장애인 등 이동이 느린 동행자는 한 사람씩 역할을 나눠 부축하고 속도를 맞추세요.');
+      }
+
+      if (isBasement) {
+        guideParts.push('지하층은 연기가 아래로 유입될 수 있어 출입구 방향 확인과 구조 요청이 중요합니다.');
+        actions.push('지하층이면 출입구 방향의 연기와 열기를 확인하고, 막혀 있으면 즉시 현재 위치를 119에 알리세요.');
+      }
+
+      if (isHighFloor) {
+        actions.push('고층에서는 창문 밖으로 이동하거나 뛰어내리지 말고 계단 상태와 구조 안내를 우선 확인하세요.');
+      }
+
+      if (mentionsWindow) {
+        actions.push('창문을 열 때는 연기가 더 들어오는지 확인하고, 구조 신호가 필요한 경우에만 짧게 활용하세요.');
+      }
+
+      if (report.report_note.trim()) {
+        guideParts.push('추가 메모에 적힌 상황을 반영한 참고 안내입니다.');
+      }
+
+      return {
+        guide: `${escapeHtml(incident.address)} ${escapeHtml(incident.fire_floor)} 기준 안내입니다. ${guideParts.join(' ')}`,
+        priority_actions: uniqueItems(actions),
+        avoid_actions: uniqueItems(avoidActions),
+        warning: '상황이 나빠지거나 이동 경로가 불확실하면 즉시 이동을 멈추고 119 및 현장 안내를 우선하세요.',
+        disclaimer: '현재 입력된 정보를 기준으로 한 참고 안내입니다. 실제 상황에서는 119와 현장 안내를 우선하세요.'
+      };
+    }
+
+    function createCitizenReportFromSample() {
+      const address = document.getElementById('citizen-address').value.trim() || '시연용 A건물';
+      const floor = document.getElementById('citizen-floor').value.trim() || '미확인 층';
+      const note = document.getElementById('citizen-note').value.trim();
+      const report = {
+        has_smoke: document.getElementById('citizen-smoke').checked,
+        has_flame: document.getElementById('citizen-flame').checked,
+        stairs_available: document.getElementById('citizen-stairs').checked,
+        is_trapped: document.getElementById('citizen-trapped').checked,
+        has_vulnerable_people: document.getElementById('citizen-vulnerable').checked,
+        has_child_companion: document.getElementById('citizen-child').checked,
+        hallway_smoke_visible: document.getElementById('citizen-hallway-smoke').checked,
+        door_closed: document.getElementById('citizen-door-closed').checked,
+        door_handle_hot: document.getElementById('citizen-door-hot').checked,
+        report_note: note
+      };
+      const score =
+        Number(report.has_smoke) +
+        Number(report.hallway_smoke_visible) +
+        Number(report.has_flame) * 2 +
+        Number(!report.stairs_available) +
+        Number(report.is_trapped) * 2 +
+        Number(report.has_vulnerable_people) +
+        Number(report.has_child_companion) +
+        Number(report.door_handle_hot);
+      const riskLevel = score >= 4 ? '높음' : score >= 2 ? '중간' : '낮음';
+      const conditions = [
+        report.has_smoke ? '연기 발생' : '',
+        report.hallway_smoke_visible ? '복도 쪽 연기 확인' : '',
+        report.has_flame ? '불꽃 목격' : '',
+        !report.stairs_available ? '계단 이용 불확실' : '',
+        report.is_trapped ? '신고자 고립 가능' : '',
+        report.has_vulnerable_people ? '노약자/장애인 동행' : '',
+        report.has_child_companion ? '어린아이 동행' : '',
+        report.door_closed ? '문 닫힘' : '',
+        report.door_handle_hot ? '문 손잡이 열감' : ''
+      ].filter(Boolean);
+      const incident = {
+        id: incidents.length > 0 ? Math.max(...incidents.map((item) => item.id)) + 1 : 1,
+        address,
+        fire_floor: floor,
+        risk_level: riskLevel,
+        status: '접수됨',
+        summary: `${floor}에서 시민 입력 신고 접수. ${conditions.length ? conditions.join(', ') : '세부 위험 정보 제한적'}.${note ? ` 추가 메모: ${note}` : ''}`,
+        report
+      };
+      incidents = [incident, ...incidents];
+      selectedIncidentId = incident.id;
+      citizenResult = createGuideFromIncident(incident);
+      renderCitizen();
+    }
+
+    function renderCitizen() {
+      const result = citizenResult ? `
+        ${resultCard('참고용 대피 안내', `<p class="guide-text">${citizenResult.guide}</p>`, 'alert')}
+        ${resultCard('우선 행동 목록', `<ol class="action-list">${citizenResult.priority_actions.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ol>`)}
+        ${resultCard('피해야 할 행동', `<ol class="action-list">${citizenResult.avoid_actions.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ol>`)}
+        ${resultCard('경고', `<p>${escapeHtml(citizenResult.warning)}</p>`)}
+        ${resultCard('안내 범위', `<p>${escapeHtml(citizenResult.disclaimer)}</p>`)}
+      ` : resultCard('대피 안내 대기', '<p>왼쪽 정보를 입력하고 시연용 신고를 등록하면 대피 안내가 표시되고, 같은 신고가 소방관과 중앙 통제 화면에도 표시됩니다.</p>');
+
+      document.getElementById('app').innerHTML = layout(
+        'CITIZEN EVACUATION',
+        '시민 대피 안내',
+        '현재 입력한 주소, 층수, 상황 체크, 메모를 기준으로 즉시 참고할 행동을 정리합니다.',
+        `
+          <section class="dashboard-grid container">
+            <form class="panel form-panel" onsubmit="event.preventDefault(); createCitizenReportFromSample();">
+              <label>현재 위치 또는 주소<input id="citizen-address" placeholder="예: 시연용 A건물" autocomplete="off" required /></label>
+              <label>현재 층<input id="citizen-floor" placeholder="예: 5층, 지하 1층" autocomplete="off" required /></label>
+              <label>추가 상황 메모<textarea id="citizen-note" rows="4" placeholder="예: 복도 쪽에 연기가 보이고 아이가 함께 있습니다."></textarea></label>
+              <div class="toggle-grid">
+                <div class="condition-section">
+                  <p class="condition-section-title">위험 징후</p>
+                  <div class="condition-grid">
+                    <label class="condition-option"><input id="citizen-smoke" type="checkbox" /> 연기가 있음</label>
+                    <label class="condition-option"><input id="citizen-hallway-smoke" type="checkbox" /> 복도 쪽 연기가 보임</label>
+                    <label class="condition-option"><input id="citizen-flame" type="checkbox" /> 불꽃이 보임</label>
+                  </div>
+                </div>
+                <div class="condition-section">
+                  <p class="condition-section-title">이동 상태</p>
+                  <div class="condition-grid">
+                    <label class="condition-option"><input id="citizen-stairs" type="checkbox" /> 계단 이용 가능</label>
+                    <label class="condition-option"><input id="citizen-trapped" type="checkbox" /> 갇혀 있거나 이동이 어려움</label>
+                  </div>
+                </div>
+                <div class="condition-section">
+                  <p class="condition-section-title">동행자</p>
+                  <div class="condition-grid">
+                    <label class="condition-option"><input id="citizen-vulnerable" type="checkbox" /> 노약자/장애인 동행</label>
+                    <label class="condition-option"><input id="citizen-child" type="checkbox" /> 어린아이 동행</label>
+                  </div>
+                </div>
+                <div class="condition-section">
+                  <p class="condition-section-title">문 상태</p>
+                  <div class="condition-grid">
+                    <label class="condition-option"><input id="citizen-door-closed" type="checkbox" /> 문이 닫혀 있음</label>
+                    <label class="condition-option"><input id="citizen-door-hot" type="checkbox" /> 문 손잡이나 문 주변이 뜨거움</label>
+                  </div>
+                </div>
+              </div>
+              <button class="primary-button" type="submit">시연용 신고 등록</button>
+            </form>
+            <div class="result-stack">${result}</div>
           </section>
         `
       );

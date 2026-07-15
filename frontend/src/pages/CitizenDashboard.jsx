@@ -11,8 +11,44 @@ const initialForm = {
   stairs_available: false,
   is_trapped: false,
   has_vulnerable_people: false,
+  has_child_companion: false,
+  hallway_smoke_visible: false,
+  door_closed: false,
+  door_handle_hot: false,
   report_note: '',
 };
+
+const conditionGroups = [
+  {
+    title: '위험 징후',
+    options: [
+      ['has_smoke', '연기가 있음'],
+      ['hallway_smoke_visible', '복도 쪽 연기가 보임'],
+      ['has_flame', '불꽃이 보임'],
+    ],
+  },
+  {
+    title: '이동 상태',
+    options: [
+      ['stairs_available', '계단 이용 가능'],
+      ['is_trapped', '갇혀 있거나 이동이 어려움'],
+    ],
+  },
+  {
+    title: '동행자',
+    options: [
+      ['has_vulnerable_people', '노약자/장애인 동행'],
+      ['has_child_companion', '어린아이 동행'],
+    ],
+  },
+  {
+    title: '문 상태',
+    options: [
+      ['door_closed', '문이 닫혀 있음'],
+      ['door_handle_hot', '문 손잡이나 문 주변이 뜨거움'],
+    ],
+  },
+];
 
 export default function CitizenDashboard({ onBack }) {
   const [form, setForm] = useState(initialForm);
@@ -41,8 +77,8 @@ export default function CitizenDashboard({ onBack }) {
   return (
     <Layout
       mode="CITIZEN EVACUATION"
-      title="Survive the Immediate."
-      subtitle="복잡한 기능 없이 현재 상태만 입력하고 바로 행동 지침을 확인합니다."
+      title="시민 대피 안내"
+      subtitle="현재 입력한 주소, 층수, 상황 체크, 메모를 기준으로 즉시 참고할 행동을 정리합니다."
       onBack={onBack}
     >
       <section className="dashboard-grid container">
@@ -52,6 +88,7 @@ export default function CitizenDashboard({ onBack }) {
             <input
               autoComplete="off"
               placeholder="예: 시연용 A건물"
+              required
               value={form.location}
               onChange={(event) => updateField('location', event.target.value)}
             />
@@ -60,7 +97,8 @@ export default function CitizenDashboard({ onBack }) {
             현재 층
             <input
               autoComplete="off"
-              placeholder="예: 5층"
+              placeholder="예: 5층, 지하 1층"
+              required
               value={form.current_floor}
               onChange={(event) => updateField('current_floor', event.target.value)}
             />
@@ -69,18 +107,30 @@ export default function CitizenDashboard({ onBack }) {
             추가 상황 메모
             <textarea
               rows="4"
-              placeholder="예: 복도 쪽에 연기가 보입니다."
+              placeholder="예: 복도 쪽에 연기가 보이고 아이가 함께 있습니다."
               value={form.report_note}
               onChange={(event) => updateField('report_note', event.target.value)}
             />
           </label>
 
-          <div className="toggle-grid">
-            <label><input type="checkbox" checked={form.has_smoke} onChange={(event) => updateField('has_smoke', event.target.checked)} /> 연기가 많음</label>
-            <label><input type="checkbox" checked={form.has_flame} onChange={(event) => updateField('has_flame', event.target.checked)} /> 불꽃이 보임</label>
-            <label><input type="checkbox" checked={form.stairs_available} onChange={(event) => updateField('stairs_available', event.target.checked)} /> 계단 이용 가능</label>
-            <label><input type="checkbox" checked={form.is_trapped} onChange={(event) => updateField('is_trapped', event.target.checked)} /> 갇혀 있음</label>
-            <label><input type="checkbox" checked={form.has_vulnerable_people} onChange={(event) => updateField('has_vulnerable_people', event.target.checked)} /> 노약자/아이/장애인 동행</label>
+          <div className="toggle-grid" aria-label="현재 상황 선택">
+            {conditionGroups.map((group) => (
+              <div className="condition-section" key={group.title}>
+                <p className="condition-section-title">{group.title}</p>
+                <div className="condition-grid">
+                  {group.options.map(([field, label]) => (
+                    <label className="condition-option" key={field}>
+                      <input
+                        type="checkbox"
+                        checked={form[field]}
+                        onChange={(event) => updateField(field, event.target.checked)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           <button className="primary-button large-button" type="submit" disabled={loading}>
@@ -92,7 +142,7 @@ export default function CitizenDashboard({ onBack }) {
         <div className="result-stack">
           {result ? (
             <>
-              <ResultCard title="AI 대피 안내" tone="alert">
+              <ResultCard title="참고용 대피 안내" tone="alert">
                 <p className="guide-text">{result.guide}</p>
               </ResultCard>
               <ResultCard title="우선 행동 목록">
@@ -100,6 +150,13 @@ export default function CitizenDashboard({ onBack }) {
                   {result.priority_actions.map((action) => <li key={action}>{action}</li>)}
                 </ol>
               </ResultCard>
+              {result.avoid_actions?.length > 0 && (
+                <ResultCard title="피해야 할 행동">
+                  <ol className="action-list">
+                    {result.avoid_actions.map((action) => <li key={action}>{action}</li>)}
+                  </ol>
+                </ResultCard>
+              )}
               <ResultCard title="경고">
                 <p>{result.warning}</p>
               </ResultCard>

@@ -6,7 +6,7 @@ from schemas.request_models import CitizenIncidentReportRequest
 
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "sample_incidents.json"
 RISK_ORDER = {"높음": 3, "중간": 2, "낮음": 1}
-STATUS_ORDER = {"접수됨": 3, "출동 중": 2, "현장 도착": 1, "진압 중": 1, "완료": 0}
+STATUS_ORDER = {"접수됨": 3, "출동 중": 2, "현장 확인": 1, "진압 중": 1, "완료": 0}
 
 _created_incidents = []
 
@@ -38,6 +38,8 @@ def _risk_level_from_report(payload: CitizenIncidentReportRequest):
     score = 0
     if payload.has_smoke:
         score += 1
+    if payload.hallway_smoke_visible:
+        score += 1
     if payload.has_flame:
         score += 2
     if payload.is_trapped:
@@ -45,6 +47,10 @@ def _risk_level_from_report(payload: CitizenIncidentReportRequest):
     if not payload.stairs_available:
         score += 1
     if payload.has_vulnerable_people:
+        score += 1
+    if payload.has_child_companion:
+        score += 1
+    if payload.door_handle_hot:
         score += 1
 
     if score >= 4:
@@ -58,6 +64,8 @@ def _summary_from_report(payload: CitizenIncidentReportRequest):
     conditions = []
     if payload.has_smoke:
         conditions.append("연기 발생")
+    if payload.hallway_smoke_visible:
+        conditions.append("복도 쪽 연기 확인")
     if payload.has_flame:
         conditions.append("불꽃 목격")
     if not payload.stairs_available:
@@ -65,7 +73,13 @@ def _summary_from_report(payload: CitizenIncidentReportRequest):
     if payload.is_trapped:
         conditions.append("신고자 고립 가능")
     if payload.has_vulnerable_people:
-        conditions.append("노약자/아이/장애인 동행")
+        conditions.append("노약자/장애인 동행")
+    if payload.has_child_companion:
+        conditions.append("어린아이 동행")
+    if payload.door_closed:
+        conditions.append("문 닫힘")
+    if payload.door_handle_hot:
+        conditions.append("문 손잡이 열감")
 
     condition_text = ", ".join(conditions) if conditions else "세부 위험 정보 제한적"
     note = f" 추가 메모: {payload.report_note}" if payload.report_note.strip() else ""
@@ -99,6 +113,10 @@ def create_incident_from_citizen_report(payload: CitizenIncidentReportRequest):
             "stairs_available": payload.stairs_available,
             "is_trapped": payload.is_trapped,
             "has_vulnerable_people": payload.has_vulnerable_people,
+            "has_child_companion": payload.has_child_companion,
+            "hallway_smoke_visible": payload.hallway_smoke_visible,
+            "door_closed": payload.door_closed,
+            "door_handle_hot": payload.door_handle_hot,
             "report_note": payload.report_note,
         },
     }

@@ -57,21 +57,31 @@ def test_created_citizen_report_is_visible_to_other_roles():
     report_response = client.post(
         "/api/v1/incidents/citizen-reports",
         json={
-            "location": "시연용 신규 건물",
+            "location": "시연용 복합 건물",
             "current_floor": "7층",
             "has_smoke": True,
             "has_flame": True,
             "stairs_available": False,
             "is_trapped": True,
             "has_vulnerable_people": False,
-            "report_note": "복도 쪽 열기와 연기가 강함",
+            "has_child_companion": True,
+            "hallway_smoke_visible": True,
+            "door_closed": True,
+            "door_handle_hot": True,
+            "report_note": "복도 쪽 연기가 강하고 아이가 함께 있음",
         },
     )
 
     assert report_response.status_code == 200
-    created = report_response.json()["data"]["incident"]
-    assert created["address"] == "시연용 신규 건물"
+    data = report_response.json()["data"]
+    created = data["incident"]
+    guide = data["evacuation_guide"]
+    assert created["address"] == "시연용 복합 건물"
     assert created["risk_level"] == "높음"
+    assert created["report"]["has_child_companion"] is True
+    assert any("어린아이" in action for action in guide["priority_actions"])
+    assert any("문 손잡이" in action for action in guide["priority_actions"])
+    assert any("복도" in action for action in guide["priority_actions"])
 
     incidents_response = client.get("/api/v1/incidents")
     incident_ids = [incident["id"] for incident in incidents_response.json()["data"]["incidents"]]
@@ -84,3 +94,30 @@ def test_created_citizen_report_is_visible_to_other_roles():
     guide_response = client.get(f"/api/v1/citizen/incidents/{created['id']}/evacuation-guide")
     assert guide_response.status_code == 200
     assert guide_response.json()["data"]["incident_id"] == created["id"]
+
+
+def test_evacuation_guide_changes_by_note_floor_and_conditions():
+    response = client.post(
+        "/api/v1/citizen/evacuation-guide",
+        json={
+            "location": "시연용 지하 상가",
+            "current_floor": "지하 1층",
+            "has_smoke": False,
+            "has_flame": False,
+            "stairs_available": True,
+            "is_trapped": False,
+            "has_vulnerable_people": False,
+            "has_child_companion": False,
+            "hallway_smoke_visible": False,
+            "door_closed": False,
+            "door_handle_hot": False,
+            "report_note": "복도에 연기가 보이고 문 손잡이가 뜨겁습니다. 어린 아이와 있습니다.",
+        },
+    )
+
+    assert response.status_code == 200
+    guide = response.json()["data"]
+    assert "지하층" in guide["guide"]
+    assert any("어린아이" in action for action in guide["priority_actions"])
+    assert any("복도" in action for action in guide["priority_actions"])
+    assert any("문 손잡이" in action for action in guide["priority_actions"])

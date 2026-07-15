@@ -4,11 +4,16 @@ from pydantic import BaseModel
 class EvacuationGuideRequest(BaseModel):
     location: str
     current_floor: str
-    has_smoke: bool
-    has_flame: bool
-    stairs_available: bool
-    is_trapped: bool
-    has_vulnerable_people: bool
+    has_smoke: bool = False
+    has_flame: bool = False
+    stairs_available: bool = False
+    is_trapped: bool = False
+    has_vulnerable_people: bool = False
+    has_child_companion: bool = False
+    hallway_smoke_visible: bool = False
+    door_closed: bool = False
+    door_handle_hot: bool = False
+    report_note: str = ""
 
 
 class CitizenIncidentReportRequest(EvacuationGuideRequest):

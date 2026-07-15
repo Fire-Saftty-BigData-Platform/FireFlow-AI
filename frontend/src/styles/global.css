@@ -406,7 +406,7 @@ summary {
 .toggle-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 .toggle-grid label {
@@ -421,6 +421,45 @@ summary {
 
 .toggle-grid input {
   width: auto;
+}
+
+.condition-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.condition-section-title {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.condition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.condition-option {
+  display: grid !important;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px !important;
+  min-height: 44px;
+  border: 1px solid var(--border-color) !important;
+  padding: 10px 12px !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
+
+.condition-option input {
+  width: auto;
+  margin: 0;
 }
 
 .primary-button,
@@ -660,5 +699,9 @@ summary {
   .info-list div {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .condition-grid {
+    grid-template-columns: 1fr;
   }
 }
