@@ -1252,23 +1252,30 @@
       const values = sampleScenarioPresets[index].values;
       const currentAddress = document.getElementById('citizen-address')?.value || '';
       const currentFloor = document.getElementById('citizen-floor')?.value || '';
+      const currentNote = document.getElementById('citizen-note')?.value || '';
+      const fieldIds = {
+        has_smoke: 'citizen-smoke',
+        hallway_smoke_visible: 'citizen-hallway-smoke',
+        has_flame: 'citizen-flame',
+        stairs_available: 'citizen-stairs',
+        is_trapped: 'citizen-trapped',
+        has_vulnerable_people: 'citizen-vulnerable',
+        has_child_companion: 'citizen-child',
+        door_closed: 'citizen-door-closed',
+        door_handle_hot: 'citizen-door-hot'
+      };
+      const currentChecked = Object.fromEntries(
+        Object.entries(fieldIds).map(([field, id]) => [field, Boolean(document.getElementById(id)?.checked)])
+      );
       renderCitizen();
       document.getElementById('citizen-address').value = currentAddress;
       document.getElementById('citizen-floor').value = currentFloor;
-      document.getElementById('citizen-note').value = values.note || '';
+      document.getElementById('citizen-note').value = currentNote && values.note
+        ? `${currentNote}\n${values.note}`
+        : currentNote || values.note || '';
       Object.keys(sampleConditionLabels).forEach((field) => {
-        const id = {
-          has_smoke: 'citizen-smoke',
-          hallway_smoke_visible: 'citizen-hallway-smoke',
-          has_flame: 'citizen-flame',
-          stairs_available: 'citizen-stairs',
-          is_trapped: 'citizen-trapped',
-          has_vulnerable_people: 'citizen-vulnerable',
-          has_child_companion: 'citizen-child',
-          door_closed: 'citizen-door-closed',
-          door_handle_hot: 'citizen-door-hot'
-        }[field];
-        document.getElementById(id).checked = Boolean(values[field]);
+        const id = fieldIds[field];
+        document.getElementById(id).checked = currentChecked[field] || values[field] === true;
       });
     }
 

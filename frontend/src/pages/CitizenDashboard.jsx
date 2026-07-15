@@ -127,12 +127,22 @@ export default function CitizenDashboard({ onBack }) {
   };
 
   const applyScenario = (values) => {
-    setForm((prev) => ({
-      ...initialForm,
-      location: prev.location,
-      current_floor: prev.current_floor,
-      ...values,
-    }));
+    setForm((prev) => {
+      const next = { ...prev };
+
+      Object.entries(values).forEach(([field, value]) => {
+        if (field === 'report_note') return;
+        if (value === true) next[field] = true;
+      });
+
+      if (values.report_note) {
+        next.report_note = prev.report_note
+          ? `${prev.report_note}\n${values.report_note}`
+          : values.report_note;
+      }
+
+      return next;
+    });
     setResult(null);
     setSubmittedForm(null);
     setError('');
