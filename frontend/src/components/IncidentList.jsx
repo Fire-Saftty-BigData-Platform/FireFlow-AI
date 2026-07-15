@@ -1,3 +1,5 @@
+import IncidentConditionTags from './IncidentConditionTags.jsx';
+
 export default function IncidentList({ incidents, selectedId, onSelect }) {
   if (incidents.length === 0) {
     return <p className="empty-text">표시할 신고가 없습니다.</p>;
@@ -15,6 +17,7 @@ export default function IncidentList({ incidents, selectedId, onSelect }) {
           <span className={`risk-pill risk-${incident.risk_level}`}>{incident.risk_level}</span>
           <strong>{incident.address}</strong>
           <small>{incident.fire_floor} / {incident.status}</small>
+          {incident.report && <IncidentConditionTags report={incident.report} emptyText="상세 조건 없음" />}
         </button>
       ))}
     </div>

@@ -118,6 +118,7 @@ function selectedConditions(form) {
 export default function CitizenDashboard({ onBack }) {
   const [form, setForm] = useState(initialForm);
   const [submittedForm, setSubmittedForm] = useState(null);
+  const [selectedScenarios, setSelectedScenarios] = useState([]);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -126,7 +127,7 @@ export default function CitizenDashboard({ onBack }) {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const applyScenario = (values) => {
+  const applyScenario = (label, values) => {
     setForm((prev) => {
       const next = { ...prev };
 
@@ -143,6 +144,9 @@ export default function CitizenDashboard({ onBack }) {
 
       return next;
     });
+    setSelectedScenarios((prev) => (
+      prev.includes(label) ? prev : [...prev, label]
+    ));
     setResult(null);
     setSubmittedForm(null);
     setError('');
@@ -178,10 +182,10 @@ export default function CitizenDashboard({ onBack }) {
           <div className="preset-row" aria-label="시연 예시">
             {scenarioPresets.map((preset) => (
               <button
-                className="preset-button"
+                className={`preset-button ${selectedScenarios.includes(preset.label) ? 'is-selected' : ''}`}
                 key={preset.label}
                 type="button"
-                onClick={() => applyScenario(preset.values)}
+                onClick={() => applyScenario(preset.label, preset.values)}
               >
                 {preset.label}
               </button>

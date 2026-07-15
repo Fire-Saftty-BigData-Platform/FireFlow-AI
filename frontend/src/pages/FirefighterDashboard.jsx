@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import IncidentList from '../components/IncidentList.jsx';
+import IncidentConditionTags from '../components/IncidentConditionTags.jsx';
 import Layout from '../components/Layout.jsx';
 import MapPlaceholder from '../components/MapPlaceholder.jsx';
 import ResultCard from '../components/ResultCard.jsx';
@@ -35,6 +36,8 @@ export default function FirefighterDashboard({ onBack }) {
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
+
+  const selectedIncident = incidents.find((incident) => incident.id === selectedIncidentId);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -129,10 +132,18 @@ export default function FirefighterDashboard({ onBack }) {
           <MapPlaceholder
             label="FIREFIGHTER MAP PLACEHOLDER"
             incidents={incidents}
-            selectedIncident={incidents.find((incident) => incident.id === selectedIncidentId)}
+            selectedIncident={selectedIncident}
           />
           {result ? (
             <>
+              {selectedIncident?.report && (
+                <ResultCard title="시민 입력 조건">
+                  <IncidentConditionTags report={selectedIncident.report} />
+                  {selectedIncident.report.report_note && (
+                    <p className="summary-note">{selectedIncident.report.report_note}</p>
+                  )}
+                </ResultCard>
+              )}
               <ResultCard title="건물 정보">
                 <dl className="info-list">
                   <div><dt>건물명</dt><dd>{result.building_info.name}</dd></div>

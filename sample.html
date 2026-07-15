@@ -347,6 +347,12 @@
       text-align: left;
     }
 
+    .preset-button.is-selected {
+      border-color: var(--primary-text);
+      background: var(--primary-text);
+      color: var(--bg-color);
+    }
+
     .primary-button,
     .secondary-button {
       border: 1px solid var(--primary-text);
@@ -442,6 +448,21 @@
       background: var(--soft-bg);
       padding: 6px 10px;
       font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .incident-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .incident-tags span {
+      border: 1px solid var(--border-color);
+      background: var(--soft-bg);
+      padding: 4px 8px;
+      color: var(--primary-text);
+      font-size: 0.74rem;
       font-weight: 800;
     }
 
@@ -869,14 +890,20 @@
 
     function renderFirefighter() {
       const selected = incidents.find((incident) => incident.id === selectedIncidentId) || incidents[0];
+      const citizenConditionCard = selected?.report ? resultCard('시민 입력 조건', `
+        ${incidentTagsHtml(selected.report)}
+        ${selected.report.report_note ? `<p class="summary-note">${escapeHtml(selected.report.report_note)}</p>` : ''}
+      `) : '';
       const briefingList = incidents.length === 0 ? '<p class="empty-text">표시할 신고가 없습니다. 시민 화면에서 시연용 신고를 먼저 등록하세요.</p>' : incidents.map((incident) => `
         <button class="incident-item ${selected.id === incident.id ? 'is-active' : ''}" type="button" onclick="selectedIncidentId = ${incident.id}; firefighterResult = createBriefingFromIncident(incidents.find((item) => item.id === ${incident.id})); renderFirefighter();">
           <span class="risk-pill risk-${incident.risk_level}">${incident.risk_level}</span>
           <strong>${incident.address}</strong>
           <small>${incident.fire_floor} / ${incident.status}</small>
+          ${incident.report ? incidentTagsHtml(incident.report) : ''}
         </button>
       `).join('');
       const result = firefighterResult ? `
+        ${citizenConditionCard}
         ${resultCard('건물 정보', `<dl class="info-list">
           <div><dt>건물명</dt><dd>${building.name}</dd></div>
           <div><dt>규모</dt><dd>${building.floors}</dd></div>
@@ -929,6 +956,10 @@
 
     function renderControl() {
       const selected = incidents.find((incident) => incident.id === selectedIncidentId) || incidents[0];
+      const controlConditionCard = selected?.report ? resultCard('시민 입력 조건', `
+        ${incidentTagsHtml(selected.report)}
+        ${selected.report.report_note ? `<p class="summary-note">${escapeHtml(selected.report.report_note)}</p>` : ''}
+      `) : '';
       const detail = selected ? resultCard('신고 상세', `<dl class="info-list">
         <div><dt>주소</dt><dd>${selected.address}</dd></div>
         <div><dt>발생 층</dt><dd>${selected.fire_floor}</dd></div>
@@ -941,6 +972,7 @@
           <span class="risk-pill risk-${incident.risk_level}">${incident.risk_level}</span>
           <strong>${incident.address}</strong>
           <small>${incident.fire_floor} / ${incident.status}</small>
+          ${incident.report ? incidentTagsHtml(incident.report) : ''}
         </button>
       `).join('');
 
@@ -964,6 +996,7 @@
             </div>
             <div class="result-stack">
               ${mapPlaceholder('CONTROL MAP PLACEHOLDER', incidents, selected)}
+              ${controlConditionCard}
               ${detail}
             </div>
           </section>
@@ -1197,6 +1230,8 @@
       door_handle_hot: '문 손잡이나 문 주변이 뜨거움'
     };
 
+    const selectedSampleScenarioIndexes = new Set();
+
     const sampleScenarioPresets = [
       {
         label: '복도 연기 + 아이',
@@ -1242,14 +1277,24 @@
         .map(([, label]) => label);
     }
 
+    function incidentTagsHtml(report) {
+      const labels = selectedSampleConditions(report || {});
+      return `<div class="incident-tags">${
+        labels.length > 0
+          ? labels.map((label) => `<span>${escapeHtml(label)}</span>`).join('')
+          : '<span>상세 조건 없음</span>'
+      }</div>`;
+    }
+
     function samplePresetButtons() {
       return `<div class="preset-row" aria-label="시연 예시">
-        ${sampleScenarioPresets.map((preset, index) => `<button class="preset-button" type="button" onclick="applySampleScenario(${index})">${preset.label}</button>`).join('')}
+        ${sampleScenarioPresets.map((preset, index) => `<button class="preset-button ${selectedSampleScenarioIndexes.has(index) ? 'is-selected' : ''}" type="button" onclick="applySampleScenario(${index})">${preset.label}</button>`).join('')}
       </div>`;
     }
 
     function applySampleScenario(index) {
       const values = sampleScenarioPresets[index].values;
+      selectedSampleScenarioIndexes.add(index);
       const currentAddress = document.getElementById('citizen-address')?.value || '';
       const currentFloor = document.getElementById('citizen-floor')?.value || '';
       const currentNote = document.getElementById('citizen-note')?.value || '';

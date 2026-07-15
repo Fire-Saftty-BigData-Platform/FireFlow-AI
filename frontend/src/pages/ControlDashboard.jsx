@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import IncidentConditionTags from '../components/IncidentConditionTags.jsx';
 import IncidentList from '../components/IncidentList.jsx';
 import Layout from '../components/Layout.jsx';
 import MapPlaceholder from '../components/MapPlaceholder.jsx';
@@ -81,6 +82,12 @@ export default function ControlDashboard({ onBack }) {
                 <div><dt>발생 층</dt><dd>{selectedIncident.fire_floor}</dd></div>
                 <div><dt>위험도</dt><dd>{selectedIncident.risk_level}</dd></div>
                 <div><dt>상태</dt><dd>{selectedIncident.status}</dd></div>
+                {selectedIncident.report && (
+                  <div><dt>시민 조건</dt><dd><IncidentConditionTags report={selectedIncident.report} /></dd></div>
+                )}
+                {selectedIncident.report?.report_note && (
+                  <div><dt>상황 메모</dt><dd>{selectedIncident.report.report_note}</dd></div>
+                )}
                 <div><dt>요약</dt><dd>{selectedIncident.summary}</dd></div>
               </dl>
             </ResultCard>
