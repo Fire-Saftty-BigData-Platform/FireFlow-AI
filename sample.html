@@ -331,6 +331,22 @@
       margin: 0;
     }
 
+    .preset-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .preset-button {
+      border: 1px solid var(--border-color);
+      background: var(--soft-bg);
+      padding: 10px 12px;
+      color: var(--primary-text);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-align: left;
+    }
+
     .primary-button,
     .secondary-button {
       border: 1px solid var(--primary-text);
@@ -388,6 +404,49 @@
       margin-bottom: 10px;
       color: var(--primary-text);
       font-weight: 700;
+    }
+
+    .priority-list {
+      padding-left: 0;
+      list-style-position: inside;
+    }
+
+    .first-action {
+      margin-bottom: 16px !important;
+      border-left: 4px solid var(--alert-border);
+      background: var(--alert-bg);
+      padding: 14px 16px;
+      list-style-position: inside;
+    }
+
+    .summary-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .summary-strip strong {
+      font-size: 1rem;
+    }
+
+    .summary-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .summary-tags span {
+      border: 1px solid var(--border-color);
+      background: var(--soft-bg);
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .summary-note {
+      margin-top: 14px !important;
     }
 
     .info-list {
@@ -582,6 +641,10 @@
       }
 
       .condition-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .preset-row {
         grid-template-columns: 1fr;
       }
     }
@@ -1080,6 +1143,167 @@
         `
           <section class="dashboard-grid container">
             <form class="panel form-panel" onsubmit="event.preventDefault(); createCitizenReportFromSample();">
+              <label>현재 위치 또는 주소<input id="citizen-address" placeholder="예: 시연용 A건물" autocomplete="off" required /></label>
+              <label>현재 층<input id="citizen-floor" placeholder="예: 5층, 지하 1층" autocomplete="off" required /></label>
+              <label>추가 상황 메모<textarea id="citizen-note" rows="4" placeholder="예: 복도 쪽에 연기가 보이고 아이가 함께 있습니다."></textarea></label>
+              <div class="toggle-grid">
+                <div class="condition-section">
+                  <p class="condition-section-title">위험 징후</p>
+                  <div class="condition-grid">
+                    <label class="condition-option"><input id="citizen-smoke" type="checkbox" /> 연기가 있음</label>
+                    <label class="condition-option"><input id="citizen-hallway-smoke" type="checkbox" /> 복도 쪽 연기가 보임</label>
+                    <label class="condition-option"><input id="citizen-flame" type="checkbox" /> 불꽃이 보임</label>
+                  </div>
+                </div>
+                <div class="condition-section">
+                  <p class="condition-section-title">이동 상태</p>
+                  <div class="condition-grid">
+                    <label class="condition-option"><input id="citizen-stairs" type="checkbox" /> 계단 이용 가능</label>
+                    <label class="condition-option"><input id="citizen-trapped" type="checkbox" /> 갇혀 있거나 이동이 어려움</label>
+                  </div>
+                </div>
+                <div class="condition-section">
+                  <p class="condition-section-title">동행자</p>
+                  <div class="condition-grid">
+                    <label class="condition-option"><input id="citizen-vulnerable" type="checkbox" /> 노약자/장애인 동행</label>
+                    <label class="condition-option"><input id="citizen-child" type="checkbox" /> 어린아이 동행</label>
+                  </div>
+                </div>
+                <div class="condition-section">
+                  <p class="condition-section-title">문 상태</p>
+                  <div class="condition-grid">
+                    <label class="condition-option"><input id="citizen-door-closed" type="checkbox" /> 문이 닫혀 있음</label>
+                    <label class="condition-option"><input id="citizen-door-hot" type="checkbox" /> 문 손잡이나 문 주변이 뜨거움</label>
+                  </div>
+                </div>
+              </div>
+              <button class="primary-button" type="submit">시연용 신고 등록</button>
+            </form>
+            <div class="result-stack">${result}</div>
+          </section>
+        `
+      );
+    }
+
+    const sampleConditionLabels = {
+      has_smoke: '연기가 있음',
+      hallway_smoke_visible: '복도 쪽 연기가 보임',
+      has_flame: '불꽃이 보임',
+      stairs_available: '계단 이용 가능',
+      is_trapped: '갇혀 있거나 이동이 어려움',
+      has_vulnerable_people: '노약자/장애인 동행',
+      has_child_companion: '어린아이 동행',
+      door_closed: '문이 닫혀 있음',
+      door_handle_hot: '문 손잡이나 문 주변이 뜨거움'
+    };
+
+    const sampleScenarioPresets = [
+      {
+        label: '복도 연기 + 아이',
+        values: {
+          note: '복도 쪽에 연기가 보이고 어린아이와 함께 있습니다.',
+          has_smoke: true,
+          hallway_smoke_visible: true,
+          has_child_companion: true,
+          stairs_available: true
+        }
+      },
+      {
+        label: '문 손잡이 뜨거움',
+        values: {
+          note: '문 손잡이가 뜨겁고 문이 잘 열리지 않습니다.',
+          door_closed: true,
+          door_handle_hot: true,
+          stairs_available: false
+        }
+      },
+      {
+        label: '고립 상황',
+        values: {
+          note: '연기가 들어오고 이동이 어려운 상태입니다.',
+          has_smoke: true,
+          is_trapped: true,
+          has_vulnerable_people: true
+        }
+      },
+      {
+        label: '지하층 대피',
+        values: {
+          note: '지하층 출입구 방향에 연기가 보입니다.',
+          hallway_smoke_visible: true,
+          stairs_available: true
+        }
+      }
+    ];
+
+    function selectedSampleConditions(report) {
+      return Object.entries(sampleConditionLabels)
+        .filter(([field]) => report[field])
+        .map(([, label]) => label);
+    }
+
+    function samplePresetButtons() {
+      return `<div class="preset-row" aria-label="시연 예시">
+        ${sampleScenarioPresets.map((preset, index) => `<button class="preset-button" type="button" onclick="applySampleScenario(${index})">${preset.label}</button>`).join('')}
+      </div>`;
+    }
+
+    function applySampleScenario(index) {
+      const values = sampleScenarioPresets[index].values;
+      const currentAddress = document.getElementById('citizen-address')?.value || '';
+      const currentFloor = document.getElementById('citizen-floor')?.value || '';
+      renderCitizen();
+      document.getElementById('citizen-address').value = currentAddress;
+      document.getElementById('citizen-floor').value = currentFloor;
+      document.getElementById('citizen-note').value = values.note || '';
+      Object.keys(sampleConditionLabels).forEach((field) => {
+        const id = {
+          has_smoke: 'citizen-smoke',
+          hallway_smoke_visible: 'citizen-hallway-smoke',
+          has_flame: 'citizen-flame',
+          stairs_available: 'citizen-stairs',
+          is_trapped: 'citizen-trapped',
+          has_vulnerable_people: 'citizen-vulnerable',
+          has_child_companion: 'citizen-child',
+          door_closed: 'citizen-door-closed',
+          door_handle_hot: 'citizen-door-hot'
+        }[field];
+        document.getElementById(id).checked = Boolean(values[field]);
+      });
+    }
+
+    function renderCitizen() {
+      const selected = selectedIncidentId ? incidents.find((incident) => incident.id === selectedIncidentId) : null;
+      const report = selected?.report || {};
+      const selectedConditions = selected ? selectedSampleConditions(report) : [];
+      const summaryCard = selected ? resultCard('입력 요약', `
+        <div class="summary-strip">
+          <span class="risk-pill risk-${selected.risk_level}">참고 위험도 ${escapeHtml(selected.risk_level)}</span>
+          <strong>${escapeHtml(selected.address)} / ${escapeHtml(selected.fire_floor)}</strong>
+        </div>
+        <div class="summary-tags">
+          ${selectedConditions.length > 0 ? selectedConditions.map((item) => `<span>${escapeHtml(item)}</span>`).join('') : '<span>선택된 상세 조건 없음</span>'}
+        </div>
+        ${report.report_note ? `<p class="summary-note">${escapeHtml(report.report_note)}</p>` : ''}
+      `) : '';
+
+      const result = citizenResult ? `
+        ${summaryCard}
+        ${resultCard('참고용 대피 안내', `<p class="guide-text">${citizenResult.guide}</p>`, 'alert')}
+        ${resultCard('우선 행동 목록', `<ol class="action-list priority-list">${citizenResult.priority_actions.map((item, index) => `<li class="${index === 0 ? 'first-action' : ''}">${escapeHtml(item)}</li>`).join('')}</ol>`)}
+        ${resultCard('피해야 할 행동', `<ol class="action-list">${citizenResult.avoid_actions.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ol>`)}
+        ${resultCard('경고', `<p>${escapeHtml(citizenResult.warning)}</p>`)}
+        ${resultCard('안내 범위', `<p>${escapeHtml(citizenResult.disclaimer)}</p>`)}
+      ` : resultCard('대피 안내 대기', '<p>왼쪽 정보를 입력하고 시연용 신고를 등록하면 대피 안내가 표시되고, 같은 신고가 소방관과 중앙 통제 화면에도 표시됩니다.</p>');
+
+      document.getElementById('app').innerHTML = layout(
+        'CITIZEN EVACUATION',
+        '시민 대피 안내',
+        '현재 입력한 주소, 층수, 상황 체크, 메모를 기준으로 즉시 참고할 행동을 정리합니다.',
+        `
+          <section class="dashboard-grid container">
+            <form class="panel form-panel" onsubmit="event.preventDefault(); createCitizenReportFromSample();">
+              ${samplePresetButtons()}
               <label>현재 위치 또는 주소<input id="citizen-address" placeholder="예: 시연용 A건물" autocomplete="off" required /></label>
               <label>현재 층<input id="citizen-floor" placeholder="예: 5층, 지하 1층" autocomplete="off" required /></label>
               <label>추가 상황 메모<textarea id="citizen-note" rows="4" placeholder="예: 복도 쪽에 연기가 보이고 아이가 함께 있습니다."></textarea></label>

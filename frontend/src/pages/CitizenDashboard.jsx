@@ -50,14 +50,92 @@ const conditionGroups = [
   },
 ];
 
+const conditionLabels = Object.fromEntries(
+  conditionGroups.flatMap((group) => group.options),
+);
+
+const scenarioPresets = [
+  {
+    label: '복도 연기 + 아이',
+    values: {
+      has_smoke: true,
+      hallway_smoke_visible: true,
+      has_child_companion: true,
+      stairs_available: true,
+      report_note: '복도 쪽에 연기가 보이고 어린아이와 함께 있습니다.',
+    },
+  },
+  {
+    label: '문 손잡이 뜨거움',
+    values: {
+      door_closed: true,
+      door_handle_hot: true,
+      stairs_available: false,
+      report_note: '문 손잡이가 뜨겁고 문이 잘 열리지 않습니다.',
+    },
+  },
+  {
+    label: '고립 상황',
+    values: {
+      has_smoke: true,
+      is_trapped: true,
+      has_vulnerable_people: true,
+      report_note: '연기가 들어오고 이동이 어려운 상태입니다.',
+    },
+  },
+  {
+    label: '지하층 대피',
+    values: {
+      hallway_smoke_visible: true,
+      stairs_available: true,
+      report_note: '지하층 출입구 방향에 연기가 보입니다.',
+    },
+  },
+];
+
+function calculateRiskLevel(form) {
+  const score =
+    Number(form.has_smoke) +
+    Number(form.hallway_smoke_visible) +
+    Number(form.has_flame) * 2 +
+    Number(!form.stairs_available) +
+    Number(form.is_trapped) * 2 +
+    Number(form.has_vulnerable_people) +
+    Number(form.has_child_companion) +
+    Number(form.door_handle_hot);
+
+  if (score >= 4) return '높음';
+  if (score >= 2) return '중간';
+  return '낮음';
+}
+
+function selectedConditions(form) {
+  return Object.entries(conditionLabels)
+    .filter(([field]) => form[field])
+    .map(([, label]) => label);
+}
+
 export default function CitizenDashboard({ onBack }) {
   const [form, setForm] = useState(initialForm);
+  const [submittedForm, setSubmittedForm] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const applyScenario = (values) => {
+    setForm((prev) => ({
+      ...initialForm,
+      location: prev.location,
+      current_floor: prev.current_floor,
+      ...values,
+    }));
+    setResult(null);
+    setSubmittedForm(null);
+    setError('');
   };
 
   const submit = async (event) => {
@@ -67,12 +145,16 @@ export default function CitizenDashboard({ onBack }) {
     try {
       const data = await createCitizenIncidentReport(form);
       setResult(data.evacuation_guide);
+      setSubmittedForm(form);
     } catch (apiError) {
       setError('시연용 신고를 생성하지 못했습니다. 백엔드 서버 상태를 확인하세요.');
     } finally {
       setLoading(false);
     }
   };
+
+  const conditionSummary = submittedForm ? selectedConditions(submittedForm) : [];
+  const riskLevel = submittedForm ? calculateRiskLevel(submittedForm) : null;
 
   return (
     <Layout
@@ -83,6 +165,19 @@ export default function CitizenDashboard({ onBack }) {
     >
       <section className="dashboard-grid container">
         <form className="panel form-panel" onSubmit={submit}>
+          <div className="preset-row" aria-label="시연 예시">
+            {scenarioPresets.map((preset) => (
+              <button
+                className="preset-button"
+                key={preset.label}
+                type="button"
+                onClick={() => applyScenario(preset.values)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
           <label>
             현재 위치 또는 주소
             <input
@@ -142,12 +237,26 @@ export default function CitizenDashboard({ onBack }) {
         <div className="result-stack">
           {result ? (
             <>
+              <ResultCard title="입력 요약">
+                <div className="summary-strip">
+                  <span className={`risk-pill risk-${riskLevel}`}>참고 위험도 {riskLevel}</span>
+                  <strong>{submittedForm.location} / {submittedForm.current_floor}</strong>
+                </div>
+                <div className="summary-tags">
+                  {conditionSummary.length > 0
+                    ? conditionSummary.map((item) => <span key={item}>{item}</span>)
+                    : <span>선택된 상세 조건 없음</span>}
+                </div>
+                {submittedForm.report_note && <p className="summary-note">{submittedForm.report_note}</p>}
+              </ResultCard>
               <ResultCard title="참고용 대피 안내" tone="alert">
                 <p className="guide-text">{result.guide}</p>
               </ResultCard>
               <ResultCard title="우선 행동 목록">
-                <ol className="action-list">
-                  {result.priority_actions.map((action) => <li key={action}>{action}</li>)}
+                <ol className="action-list priority-list">
+                  {result.priority_actions.map((action, index) => (
+                    <li className={index === 0 ? 'first-action' : ''} key={action}>{action}</li>
+                  ))}
                 </ol>
               </ResultCard>
               {result.avoid_actions?.length > 0 && (
