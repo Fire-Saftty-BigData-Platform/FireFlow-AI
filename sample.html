@@ -820,7 +820,7 @@
               </div>
             </section>
             <section class="role-section container" aria-label="역할 선택">
-              <button class="role-card" type="button" onclick="renderCitizen()">
+              <button class="role-card" type="button" onclick="openCitizenFromRoleSelect()">
                 <span class="mode-badge">MODE 01</span>
                 <strong>일반 사용자</strong>
                 <p>현재 위치와 위험 상황을 입력하고 즉시 대피 행동 지침을 확인합니다.</p>
@@ -1171,8 +1171,8 @@
 
       document.getElementById('app').innerHTML = layout(
         'CITIZEN EVACUATION',
-        '시민 대피 안내',
-        '현재 입력한 주소, 층수, 상황 체크, 메모를 기준으로 즉시 참고할 행동을 정리합니다.',
+        'Survive the Immediate.',
+        'Enter the current location, floor, and visible conditions to get immediate reference actions.',
         `
           <section class="dashboard-grid container">
             <form class="panel form-panel" onsubmit="event.preventDefault(); createCitizenReportFromSample();">
@@ -1286,15 +1286,40 @@
       }</div>`;
     }
 
+    function removeSampleScenarioNote(note, scenarioNote) {
+      return String(note || '')
+        .split('\n')
+        .filter((line) => line.trim() && line.trim() !== scenarioNote)
+        .join('\n');
+    }
+
+    function isSampleScenarioFieldUsed(field) {
+      return [...selectedSampleScenarioIndexes].some((index) => (
+        sampleScenarioPresets[index].values[field] === true
+      ));
+    }
+
     function samplePresetButtons() {
       return `<div class="preset-row" aria-label="시연 예시">
         ${sampleScenarioPresets.map((preset, index) => `<button class="preset-button ${selectedSampleScenarioIndexes.has(index) ? 'is-selected' : ''}" type="button" onclick="applySampleScenario(${index})">${preset.label}</button>`).join('')}
       </div>`;
     }
 
+    function openCitizenFromRoleSelect() {
+      selectedSampleScenarioIndexes.clear();
+      citizenResult = null;
+      selectedIncidentId = incidents[0]?.id || 1;
+      renderCitizen();
+    }
+
     function applySampleScenario(index) {
       const values = sampleScenarioPresets[index].values;
-      selectedSampleScenarioIndexes.add(index);
+      const wasSelected = selectedSampleScenarioIndexes.has(index);
+      if (wasSelected) {
+        selectedSampleScenarioIndexes.delete(index);
+      } else {
+        selectedSampleScenarioIndexes.add(index);
+      }
       const currentAddress = document.getElementById('citizen-address')?.value || '';
       const currentFloor = document.getElementById('citizen-floor')?.value || '';
       const currentNote = document.getElementById('citizen-note')?.value || '';
@@ -1315,12 +1340,22 @@
       renderCitizen();
       document.getElementById('citizen-address').value = currentAddress;
       document.getElementById('citizen-floor').value = currentFloor;
-      document.getElementById('citizen-note').value = currentNote && values.note
-        ? `${currentNote}\n${values.note}`
-        : currentNote || values.note || '';
+      document.getElementById('citizen-note').value = wasSelected
+        ? removeSampleScenarioNote(currentNote, values.note)
+        : currentNote.includes(values.note)
+          ? currentNote
+          : currentNote && values.note
+            ? `${currentNote}\n${values.note}`
+            : currentNote || values.note || '';
       Object.keys(sampleConditionLabels).forEach((field) => {
         const id = fieldIds[field];
-        document.getElementById(id).checked = currentChecked[field] || values[field] === true;
+        if (values[field] === true) {
+          document.getElementById(id).checked = wasSelected
+            ? isSampleScenarioFieldUsed(field)
+            : true;
+        } else {
+          document.getElementById(id).checked = currentChecked[field];
+        }
       });
     }
 
@@ -1350,8 +1385,8 @@
 
       document.getElementById('app').innerHTML = layout(
         'CITIZEN EVACUATION',
-        '시민 대피 안내',
-        '현재 입력한 주소, 층수, 상황 체크, 메모를 기준으로 즉시 참고할 행동을 정리합니다.',
+        'Survive the Immediate.',
+        'Enter the current location, floor, and visible conditions to get immediate reference actions.',
         `
           <section class="dashboard-grid container">
             <form class="panel form-panel" onsubmit="event.preventDefault(); createCitizenReportFromSample();">

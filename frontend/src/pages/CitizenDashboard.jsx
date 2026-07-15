@@ -115,6 +115,19 @@ function selectedConditions(form) {
     .map(([, label]) => label);
 }
 
+function removeScenarioNote(note, scenarioNote) {
+  return note
+    .split('\n')
+    .filter((line) => line.trim() && line.trim() !== scenarioNote)
+    .join('\n');
+}
+
+function isScenarioFieldUsed(field, selectedLabels) {
+  return scenarioPresets.some((preset) => (
+    selectedLabels.includes(preset.label) && preset.values[field] === true
+  ));
+}
+
 export default function CitizenDashboard({ onBack }) {
   const [form, setForm] = useState(initialForm);
   const [submittedForm, setSubmittedForm] = useState(null);
@@ -128,25 +141,33 @@ export default function CitizenDashboard({ onBack }) {
   };
 
   const applyScenario = (label, values) => {
+    const isSelected = selectedScenarios.includes(label);
+    const nextSelectedScenarios = isSelected
+      ? selectedScenarios.filter((item) => item !== label)
+      : [...selectedScenarios, label];
+
     setForm((prev) => {
       const next = { ...prev };
 
       Object.entries(values).forEach(([field, value]) => {
         if (field === 'report_note') return;
-        if (value === true) next[field] = true;
+        if (value !== true) return;
+        next[field] = isSelected ? isScenarioFieldUsed(field, nextSelectedScenarios) : true;
       });
 
       if (values.report_note) {
-        next.report_note = prev.report_note
-          ? `${prev.report_note}\n${values.report_note}`
-          : values.report_note;
+        next.report_note = isSelected
+          ? removeScenarioNote(prev.report_note, values.report_note)
+          : prev.report_note.includes(values.report_note)
+            ? prev.report_note
+            : prev.report_note
+              ? `${prev.report_note}\n${values.report_note}`
+              : values.report_note;
       }
 
       return next;
     });
-    setSelectedScenarios((prev) => (
-      prev.includes(label) ? prev : [...prev, label]
-    ));
+    setSelectedScenarios(nextSelectedScenarios);
     setResult(null);
     setSubmittedForm(null);
     setError('');
@@ -173,8 +194,8 @@ export default function CitizenDashboard({ onBack }) {
   return (
     <Layout
       mode="CITIZEN EVACUATION"
-      title="시민 대피 안내"
-      subtitle="현재 입력한 주소, 층수, 상황 체크, 메모를 기준으로 즉시 참고할 행동을 정리합니다."
+      title="Survive the Immediate."
+      subtitle="Enter the current location, floor, and visible conditions to get immediate reference actions."
       onBack={onBack}
     >
       <section className="dashboard-grid container">
